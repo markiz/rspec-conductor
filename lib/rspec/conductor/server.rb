@@ -39,7 +39,7 @@ module RSpec
                      when "plain"
                        Formatters::Plain.new
                      else
-                       Formatters::Fancy.recommended? ? Formatters::Fancy.new : Formatters::Plain.new
+                       (!@verbose && Formatters::Fancy.recommended?) ? Formatters::Fancy.new : Formatters::Plain.new
                      end
         @results = { passed: 0, failed: 0, pending: 0, errors: [], worker_crashes: 0, started_at: @started_at, spec_files_total: 0, spec_files_processed: 0 }
       end
