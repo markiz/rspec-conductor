@@ -13,6 +13,7 @@ module RSpec
         fail_fast_after: nil,
         verbose: false,
         display_retry_backtraces: false,
+        prefork_require: 'config/application.rb',
       }.freeze
 
       def self.run(argv)
@@ -60,6 +61,10 @@ module RSpec
             @conductor_options[:offset] = n
           end
 
+          opts.on("--prefork-require FILENAME", String, "Require this file before forking (default: config/application.rb)") do |f|
+            @conductor_options[:prefork_require] = f
+          end
+
           opts.on("--first-is-1", 'ENV["TEST_ENV_NUMBER"] for the worker 1 is "1" rather than ""') do
             @conductor_options[:first_is_1] = true
           end
@@ -97,11 +102,10 @@ module RSpec
       end
 
       def start_server
-        require_relative "server"
-
         Server.new(
           worker_count: @conductor_options[:workers],
           worker_number_offset: @conductor_options[:offset],
+          prefork_require: @conductor_options[:prefork_require],
           first_is_1: @conductor_options[:first_is_1],
           seed: @conductor_options[:seed],
           fail_fast_after: @conductor_options[:fail_fast_after],

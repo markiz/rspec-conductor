@@ -11,6 +11,7 @@ module RSpec
       # @option worker_count [Integer] How many workers to spin
       # @option rspec_args [Array<String>] A list of rspec options
       # @option worker_number_offset [Integer] Start worker numbering with an offset
+      # @option prefork_require [String] File required prior to forking
       # @option first_is_1 [Boolean] TEST_ENV_NUMBER for the first worker is "1" instead of ""
       # @option seed [Integer] Set a predefined starting seed
       # @option fail_fast_after [Integer, NilClass] Shut down the workers after a certain number of failures
@@ -20,6 +21,7 @@ module RSpec
       def initialize(worker_count:, rspec_args:, **opts)
         @worker_count = worker_count
         @worker_number_offset = opts.fetch(:worker_number_offset, 0)
+        @prefork_require = opts.fetch(:prefork_require, nil)
         @first_is_one = opts.fetch(:first_is_1, false)
         @seed = opts[:seed] || (Random.new_seed % 65_536)
         @fail_fast_after = opts[:fail_fast_after]
@@ -63,13 +65,18 @@ module RSpec
       private
 
       def preload_application
-        application = File.expand_path("config/application.rb", Conductor.root)
+        if !@prefork_require
+          debug "Prefork require not set, skipping..."
+          return
+        end
 
-        if File.exist?(application)
-          debug "Preloading config/application.rb..."
-          require application
+        preload = File.expand_path(@prefork_require, Conductor.root)
+
+        if File.exist?(preload)
+          debug "Preloading #{@prefork_require}..."
+          require preload
         else
-          debug "config/application.rb not found, skipping..."
+          debug "#{@prefork_require} not found, skipping..."
         end
 
         debug "Application preloaded, autoload paths configured"
