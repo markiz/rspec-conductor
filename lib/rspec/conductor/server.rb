@@ -141,7 +141,7 @@ module RSpec
         debug "Worker #{worker_number} started with pid #{pid}"
 
         @workers[pid] = {
-          pid:,
+          pid: pid,
           number: worker_number,
           status: :running,
           socket: Protocol::Socket.new(parent_socket),
