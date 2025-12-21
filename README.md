@@ -6,6 +6,12 @@ rspec-conductor uses a different approach, it spawns a bunch of workers, then gi
 
 User experience was designed to serve as a simple, almost drop-in, replacement for the parallel_tests gem.
 
+## Demo
+
+2x sped-up recording of what it looks like in a real project.
+
+![rspec-conductor demo](https://github.com/user-attachments/assets/2b598635-3192-4aa0-bb39-2af01b93bb4a)
+
 ## Usage
 
 Set up the databases:
