@@ -12,7 +12,7 @@ module RSpec
         NORMAL = 0
 
         def self.recommended?
-          $stdout.tty? && $stdout.winsize[0] >= 60 && $stdout.winsize[1] >= 80
+          $stdout.tty? && $stdout.winsize[0] >= 30 && $stdout.winsize[1] >= 80
         end
 
         def initialize
