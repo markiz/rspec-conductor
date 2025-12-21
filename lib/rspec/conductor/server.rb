@@ -63,11 +63,11 @@ module RSpec
       private
 
       def preload_application
-        application = File.expand_path("config/application", Conductor.root)
+        application = File.expand_path("config/application.rb", Conductor.root)
 
         if File.exist?(application)
           debug "Preloading config/application.rb..."
-          require File.expand_path("config/application", Conductor.root)
+          require application
         else
           debug "config/application.rb not found, skipping..."
         end
