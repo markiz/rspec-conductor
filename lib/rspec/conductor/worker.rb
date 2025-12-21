@@ -17,8 +17,6 @@ end
 module RSpec
   module Conductor
     class Worker
-      attr_reader :worker_number, :socket, :rspec_args, :verbose
-
       def initialize(worker_number:, socket:, rspec_args: [], verbose: false)
         @worker_number = worker_number
         @socket = socket
@@ -28,14 +26,14 @@ module RSpec
       end
 
       def run
-        suppress_output unless verbose
-        debug "Worker #{worker_number} starting"
+        suppress_output unless @verbose
+        debug "Worker #{@worker_number} starting"
         setup_load_path
         initialize_rspec
 
         loop do
           debug "Waiting for message"
-          message = @message_queue.shift || socket.receive
+          message = @message_queue.shift || @socket.receive_message
 
           unless message
             debug "Received nil message, exiting"
@@ -57,12 +55,14 @@ module RSpec
           end
         end
 
-        debug "Worker #{worker_number} shutting down, running after(:suite) hooks and exiting"
+        debug "Worker #{@worker_number} shutting down, running after(:suite) hooks and exiting"
         RSpec.configuration.__run_after_suite_hooks
       rescue StandardError => e
         debug "Worker crashed: #{e.class}: #{e.message}"
         debug e.backtrace.join("\n")
         raise
+      ensure
+        @socket.close
       end
 
       private
@@ -110,7 +110,7 @@ module RSpec
         RSpec.world.reset
         RSpec.configuration.reset_reporter
         RSpec.configuration.files_or_directories_to_run = []
-        setup_formatter(ConductorFormatter.new(socket, file, -> { check_for_shutdown }))
+        setup_formatter(ConductorFormatter.new(@socket, file, -> { check_for_shutdown }))
 
         begin
           debug "Loading spec file: #{file}"
@@ -122,19 +122,18 @@ module RSpec
           example_groups = RSpec.world.ordered_example_groups
           debug "Example count: #{RSpec.world.example_count}"
 
-          success = RSpec.configuration.reporter.report(RSpec.world.example_count) do |reporter|
+          RSpec.configuration.reporter.report(RSpec.world.example_count) do |reporter|
             example_groups.each { |g| g.run(reporter) }
           end
 
-          socket.send(
+          @socket.send_message(
             type: :spec_complete,
-            file: file,
-            exit_code: success ? 0 : 1
+            file: file
           )
         rescue StandardError => e
           debug "Spec error: #{e.class}: #{e.message}"
           debug "Backtrace: #{e.backtrace.join("\n")}"
-          socket.send(
+          @socket.send_message(
             type: :spec_error,
             file: file,
             error: e.message,
@@ -144,9 +143,9 @@ module RSpec
       end
 
       def check_for_shutdown
-        return unless socket.io.wait_readable(0)
+        return unless @socket.io.wait_readable(0)
 
-        message = socket.receive
+        message = @socket.receive_message
         return unless message
 
         if message[:type].to_sym == :shutdown
@@ -160,7 +159,7 @@ module RSpec
       end
 
       def parsed_options
-        @parsed_options ||= RSpec::Core::ConfigurationOptions.new(rspec_args)
+        @parsed_options ||= RSpec::Core::ConfigurationOptions.new(@rspec_args)
       end
 
       def setup_formatter(conductor_formatter)
@@ -171,7 +170,7 @@ module RSpec
       end
 
       def debug(message)
-        $stderr.puts "[worker #{worker_number}] #{message}"
+        $stderr.puts "[worker #{@worker_number}] #{message}"
       end
 
       def null_io_out
@@ -196,7 +195,7 @@ module RSpec
       end
 
       def example_passed(notification)
-        @socket.send(
+        @socket.send_message(
           type: :example_passed,
           file: @file,
           description: notification.example.full_description,
@@ -208,7 +207,7 @@ module RSpec
 
       def example_failed(notification)
         ex = notification.example
-        @socket.send(
+        @socket.send_message(
           type: :example_failed,
           file: @file,
           description: ex.full_description,
@@ -223,7 +222,7 @@ module RSpec
 
       def example_pending(notification)
         ex = notification.example
-        @socket.send(
+        @socket.send_message(
           type: :example_pending,
           file: @file,
           description: ex.full_description,
@@ -234,7 +233,7 @@ module RSpec
       end
 
       def retry(ex)
-        @socket.send(
+        @socket.send_message(
           type: :example_retried,
           description: ex.full_description,
           location: ex.location,

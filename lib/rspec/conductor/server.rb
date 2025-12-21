@@ -8,8 +8,6 @@ require "io/console"
 module RSpec
   module Conductor
     class Server
-      attr_reader :worker_count, :seed, :rspec_args, :verbose
-
       # @option worker_count [Integer] How many workers to spin
       # @option rspec_args [Array<String>] A list of rspec options
       # @option worker_number_offset [Integer] Start worker numbering with an offset
@@ -52,7 +50,7 @@ module RSpec
         preload_application
 
         $stdout.sync = true
-        puts "RSpec Conductor starting with #{worker_count} workers (seed: #{seed})"
+        puts "RSpec Conductor starting with #{@worker_count} workers (seed: #{@seed})"
         puts "Running #{@spec_queue.size} spec files\n\n"
 
         start_workers
@@ -98,21 +96,21 @@ module RSpec
         config = RSpec::Core::Configuration.new
         config.files_or_directories_to_run = paths
 
-        @spec_queue = config.files_to_run.shuffle(random: Random.new(seed))
+        @spec_queue = config.files_to_run.shuffle(random: Random.new(@seed))
         @results[:spec_files_total] = @spec_queue.size
       end
 
-      def parse_rspec_args
-        @parsed_rspec_args ||= RSpec::Core::ConfigurationOptions.new(rspec_args)
+      def parsed_rspec_args
+        @parsed_rspec_args ||= RSpec::Core::ConfigurationOptions.new(@rspec_args)
       end
 
       def extract_paths_from_args
-        files = parse_rspec_args.options[:files_or_directories_to_run] || []
+        files = parsed_rspec_args.options[:files_or_directories_to_run] || []
         files.empty? ? [File.join(Conductor.root, "spec/")] : files
       end
 
       def start_workers
-        worker_count.times do |i|
+        @worker_count.times do |i|
           spawn_worker(@worker_number_offset + i + 1)
         end
       end
@@ -134,8 +132,8 @@ module RSpec
           Worker.new(
             worker_number: worker_number,
             socket: Protocol::Socket.new(child_socket),
-            rspec_args: rspec_args,
-            verbose: verbose
+            rspec_args: @rspec_args,
+            verbose: @verbose
           ).run
         end
 
@@ -275,7 +273,7 @@ module RSpec
       end
 
       def debug(message)
-        return unless verbose
+        return unless @verbose
 
         $stderr.puts "[conductor] #{message}"
       end

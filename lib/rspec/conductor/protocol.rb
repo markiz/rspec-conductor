@@ -22,8 +22,6 @@ module RSpec
           nil
         end
 
-        alias send send_message
-
         def receive_message
           length_bytes = io.read(4)
           return nil unless length_bytes&.bytesize == 4
@@ -36,8 +34,6 @@ module RSpec
         rescue Errno::ECONNRESET, IOError, JSON::ParserError
           nil
         end
-
-        alias receive receive_message
 
         def close
           io.close unless io.closed?
