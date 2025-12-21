@@ -92,10 +92,10 @@ module RSpec
       def initialize_rspec
         rails_helper = File.expand_path("rails_helper.rb", Conductor.root)
         spec_helper = File.expand_path("spec_helper.rb", Conductor.root)
-        if File.exists?(rails_helper)
+        if File.exist?(rails_helper)
           debug "Requiring rails_helper to boot Rails..."
           require rails_helper
-        elsif File.exists?(spec_helper)
+        elsif File.exist?(spec_helper)
           debug "Requiring spec_helper..."
           require spec_helper
         else
