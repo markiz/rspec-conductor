@@ -12,6 +12,14 @@ User experience was designed to serve as a simple, almost drop-in, replacement f
 
 ![rspec-conductor demo](https://github.com/user-attachments/assets/2b598635-3192-4aa0-bb39-2af01b93bb4a)
 
+## Installation
+
+Add to your Gemfile:
+
+```
+gem 'rspec-conductor'
+```
+
 ## Usage
 
 Set up the databases:
