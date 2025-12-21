@@ -16,7 +16,7 @@ User experience was designed to serve as a simple, almost drop-in, replacement f
 
 Add to your Gemfile:
 
-```
+```ruby
 gem 'rspec-conductor'
 ```
 
@@ -24,7 +24,7 @@ gem 'rspec-conductor'
 
 Set up the databases:
 
-```
+```bash
 rails 'parallel:drop[10]' 'parallel:setup[10]'
 
 # if you like the first-is-1 mode, keeping your parallel test envs separate from your regular env:
@@ -33,10 +33,11 @@ PARALLEL_TEST_FIRST_IS_1=true rails 'parallel:drop[16]' 'parallel:setup[16]'
 
 Then launch the CLI app (see also `bin/rspec-conductor --help`):
 
-```
+```bash
 rspec-conductor <OPTIONS> -- <RSPEC_OPTIONS> <SPEC_PATHS>
-rspec-conductor --workers 10 -- --tag '~@flaky' spec_ether/system/
-rspec-conductor --workers 10 spec_ether/system/ # shorthand when there are no spec options is also supported
+rspec-conductor --workers 10 -- --tag '~@flaky' spec
+# shorthand for setting the paths when there are no rspec options is also supported
+rspec-conductor --workers 10 spec
 ```
 
 `--verbose` flag is especially useful for troubleshooting.
