@@ -65,7 +65,7 @@ module RSpec
       def preload_application
         application = File.expand_path("config/application", Conductor.root)
 
-        if File.exists?(application)
+        if File.exist?(application)
           debug "Preloading config/application.rb..."
           require File.expand_path("config/application", Conductor.root)
         end
@@ -141,7 +141,7 @@ module RSpec
         debug "Worker #{worker_number} started with pid #{pid}"
 
         @workers[pid] = {
-          pid:,
+          pid: pid,
           number: worker_number,
           status: :running,
           socket: Protocol::Socket.new(parent_socket),
@@ -230,9 +230,9 @@ module RSpec
       end
 
       def reap_workers
-        dead_workers = @workers.filter_map do |pid, worker|
+        dead_workers = @workers.each_with_object([]) do |(pid, worker), memo|
           result = Process.waitpid(pid, Process::WNOHANG)
-          [worker, $CHILD_STATUS] if result
+          memo << [worker, $CHILD_STATUS] if result
         end
 
         dead_workers.each do |worker, exitstatus|

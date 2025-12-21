@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby-version: ['2.6', '3.1', '3.2', '3.3', '3.4', '4.0.0-preview3']
+        rspec-version: ['3.8.0', '']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+        env:
+          RSPEC_VERSION: ${{ matrix.rspec-version }}
+
+      - name: Run tests
+        run: bundle exec rake
+        continue-on-error: ${{ matrix.allow-failure || false }}
+        env:
+          RSPEC_VERSION: ${{ matrix.rspec-version }}
