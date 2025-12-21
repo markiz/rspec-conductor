@@ -69,18 +69,14 @@ module RSpec
 
       def setup_load_path
         parsed_options.configure(RSpec.configuration)
-        default_path = RSpec.configuration.default_path || "spec"
+        @default_path = RSpec.configuration.default_path || "spec"
+        @default_full_path = File.expand_path(@default_path, Conductor.root)
 
-        spec_path = File.expand_path("spec", Conductor.root)
-        default_full_path = File.expand_path(default_path, Conductor.root)
-
-        $LOAD_PATH.unshift(spec_path) if Dir.exist?(spec_path) && !$LOAD_PATH.include?(spec_path)
-
-        if default_full_path != spec_path && Dir.exist?(default_full_path)
-          $LOAD_PATH.unshift(default_full_path)
+        if Dir.exist?(@default_full_path)
+          $LOAD_PATH.unshift(@default_full_path)
         end
 
-        debug "Load path (spec dirs): #{$LOAD_PATH.grep(/spec/)}"
+        debug "Load path (spec dirs): #{$LOAD_PATH.inspect}"
       end
 
       def suppress_output
@@ -90,8 +86,8 @@ module RSpec
       end
 
       def initialize_rspec
-        rails_helper = File.expand_path("rails_helper.rb", Conductor.root)
-        spec_helper = File.expand_path("spec_helper.rb", Conductor.root)
+        rails_helper = File.expand_path("rails_helper.rb", @default_full_path)
+        spec_helper = File.expand_path("spec_helper.rb", @default_full_path)
         if File.exist?(rails_helper)
           debug "Requiring rails_helper to boot Rails..."
           require rails_helper

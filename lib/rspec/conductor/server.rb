@@ -68,6 +68,8 @@ module RSpec
         if File.exist?(application)
           debug "Preloading config/application.rb..."
           require File.expand_path("config/application", Conductor.root)
+        else
+          debug "config/application.rb not found, skipping..."
         end
 
         debug "Application preloaded, autoload paths configured"
