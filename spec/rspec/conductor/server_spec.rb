@@ -143,7 +143,7 @@ describe RSpec::Conductor::Server do
     result = run_server(worker_count: 3)
     expect(result[:exit_code]).to eq(0)
 
-    env_numbers = File.readlines(env_file).map { _1.strip.tr('"', '') }.sort
+    env_numbers = File.readlines(env_file).map { |l| l.strip.tr('"', '') }.sort
     expect(env_numbers).to match_array(["", "2", "3"])
   end
 
@@ -168,7 +168,7 @@ describe RSpec::Conductor::Server do
     result = run_server(worker_count: 3, first_is_1: true)
     expect(result[:exit_code]).to eq(0)
 
-    env_numbers = File.readlines(env_file).map { _1.strip.tr('"', '') }.sort
+    env_numbers = File.readlines(env_file).map { |l| l.strip.tr('"', '') }.sort
     expect(env_numbers).to match_array(["1", "2", "3"])
   end
 end

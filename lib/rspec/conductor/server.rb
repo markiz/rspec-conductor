@@ -230,9 +230,9 @@ module RSpec
       end
 
       def reap_workers
-        dead_workers = @workers.filter_map do |pid, worker|
+        dead_workers = @workers.each_with_object([]) do |(pid, worker), memo|
           result = Process.waitpid(pid, Process::WNOHANG)
-          [worker, $CHILD_STATUS] if result
+          memo << [worker, $CHILD_STATUS] if result
         end
 
         dead_workers.each do |worker, exitstatus|

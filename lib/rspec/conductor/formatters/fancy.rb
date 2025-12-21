@@ -55,7 +55,7 @@ module RSpec
           lines << ""
           lines.concat(worker_lines)
           lines << ""
-          lines << @dots.map { colorize(_1[:char], _1[:color]) }.join
+          lines << @dots.map { |dot| colorize(dot[:char], dot[:color]) }.join
           lines << ""
           lines.concat(error_lines) if @last_error
           lines = rewrap_lines(lines)
@@ -124,7 +124,7 @@ module RSpec
           lines.flat_map do |line|
             _, indent, body = line.partition(/^\s*/)
             max_width = tty_width - indent.size
-            split_chars_respecting_ansi(body).each_slice(max_width).map { "#{indent}#{_1.join}" }
+            split_chars_respecting_ansi(body).each_slice(max_width).map { |chars| "#{indent}#{chars.join}" }
           end
         end
 
