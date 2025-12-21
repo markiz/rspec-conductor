@@ -65,6 +65,10 @@ module RSpec
             @conductor_options[:prefork_require] = f
           end
 
+          opts.on("--no-prefork-require", "Do not preload config/application.rb") do
+            @conductor_options[:prefork_require] = nil
+          end
+
           opts.on("--first-is-1", 'ENV["TEST_ENV_NUMBER"] for the worker 1 is "1" rather than ""') do
             @conductor_options[:first_is_1] = true
           end
