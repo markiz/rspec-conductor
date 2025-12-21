@@ -22,17 +22,6 @@ gem 'rspec-conductor'
 
 ## Usage
 
-Set up the databases:
-
-```bash
-rails 'parallel:drop[10]' 'parallel:setup[10]'
-
-# if you like the first-is-1 mode, keeping your parallel test envs separate from your regular env:
-PARALLEL_TEST_FIRST_IS_1=true rails 'parallel:drop[16]' 'parallel:setup[16]'
-```
-
-Then launch the CLI app (see also `bin/rspec-conductor --help`):
-
 ```bash
 rspec-conductor <OPTIONS> -- <RSPEC_OPTIONS> <SPEC_PATHS>
 rspec-conductor --workers 10 -- --tag '~@flaky' spec
@@ -41,6 +30,17 @@ rspec-conductor --workers 10 spec
 ```
 
 `--verbose` flag is especially useful for troubleshooting.
+
+To set up the databases (if you are using this with rails) you can use a rake task from the parallel_tests gem
+
+```bash
+rails 'parallel:drop[10]' 'parallel:setup[10]'
+
+# if you like the first-is-1 mode, keeping your parallel test envs separate from your regular env:
+PARALLEL_TEST_FIRST_IS_1=true rails 'parallel:drop[10]' 'parallel:setup[10]'
+```
+
+I might consider porting that rake task in the near future.
 
 ## Mechanics
 
