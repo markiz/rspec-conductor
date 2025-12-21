@@ -1,0 +1,52 @@
+# rspec-conductor
+
+There is a common issue when running parallel spec runners with parallel-tests: since you have to decide on the list of spec files for each runner before the run starts, you don't have good control over how well the load is distributed. What ends up happening is one runner finishes after 3 minutes, another after 7 minutes, not utilizing the CPU effectively.
+
+rspec-conductor uses a different approach, it spawns a bunch of workers, then gives each of them one spec file to run. As soon as a worker finishes, it gives them another spec file, etc.
+
+User experience was designed to serve as a simple, almost drop-in, replacement for the parallel_tests gem.
+
+## Usage
+
+Set up the databases:
+
+```
+rails 'parallel:drop[10]' 'parallel:setup[10]'
+
+# if you like the first-is-1 mode, keeping your parallel test envs separate from your regular env:
+PARALLEL_TEST_FIRST_IS_1=true rails 'parallel:drop[16]' 'parallel:setup[16]'
+```
+
+Then launch the CLI app (see also `bin/rspec-conductor --help`):
+
+```
+rspec-conductor <OPTIONS> -- <RSPEC_OPTIONS> <SPEC_PATHS>
+rspec-conductor --workers 10 -- --tag '~@flaky' spec_ether/system/
+rspec-conductor --workers 10 spec_ether/system/ # shorthand when there are no spec options is also supported
+```
+
+`--verbose` flag is especially useful for troubleshooting.
+
+## Mechanics
+
+Server process preloads the `rails_helper`, prepares a list of files to work, then spawns the workers, each with `ENV['TEST_ENV_NUMBER'] = <worker_number>` (same as parallel-tests). The two communicate over a standard unix socket. Message format is basically a tuple of `(size, json_payload)`. It should also be possible to run this process over the network, but I haven't found a solid usecase for this.
+
+## Development notes
+
+* In order to make the CLI executable load and run fast, do not add any dependencies. That includes `active_support`.
+
+## FAQ
+
+* Why not preload the whole rails environment before spawning the workers instead of just `rails_helper`?
+
+Short answer: it's unsafe. Any file descriptors, such as db connections, redis connections and even libcurl environment (which we use for elasticsearch), are shared between all the child processes, leading to hard to debug bugs.
+
+* Why not use any of the existing libraries? (see Prior Art section)
+
+`test-queue` forks after loading the whole environment rather than just the `rails_helper` (see above). `ci-queue` is deprecated for rspec. `rspecq` I couldn't get working and also I didn't like the design.
+
+## Prior Art
+
+* [test-queue](https://github.com/tmm1/test-queue)
+* [rspecq](https://github.com/skroutz/rspecq/)
+* [ci-queue](https://github.com/Shopify/ci-queue/)

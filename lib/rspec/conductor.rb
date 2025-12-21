@@ -1,0 +1,24 @@
+# frozen_string_literal: true
+
+require "rspec/core"
+
+require_relative "conductor/version"
+require_relative "conductor/protocol"
+require_relative "conductor/server"
+require_relative "conductor/worker"
+require_relative "conductor/cli"
+require_relative "conductor/formatters/plain"
+require_relative "conductor/formatters/ci"
+require_relative "conductor/formatters/fancy"
+
+module RSpec
+  module Conductor
+    def self.root
+      @root ||= Dir.pwd
+    end
+
+    def self.root=(root)
+      @root = root
+    end
+  end
+end
