@@ -31,5 +31,4 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
   spec.add_dependency "rspec-core", ">= 3.8.0"
-  spec.add_development_dependency "rake"
 end
