@@ -2,6 +2,7 @@
 
 - Fix spec_helper/rails_helper path finding [Thanks @diego-aslz]
 - Add --prefork-require and --no-prefork-require CLI options for non-rails apps or rails setups where loading config/application.rb is not entirely safe
+- Add --postfork-require and --no-postfork-require CLI options for flexibility
 
 ## [1.0.0] - 2025-12-21
 

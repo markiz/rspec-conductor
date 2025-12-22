@@ -17,11 +17,13 @@ end
 module RSpec
   module Conductor
     class Worker
-      def initialize(worker_number:, socket:, rspec_args: [], verbose: false)
+      def initialize(worker_number:, socket:, rspec_args: [], verbose: false, postfork_require: :spec_helper)
         @worker_number = worker_number
         @socket = socket
         @rspec_args = rspec_args
         @verbose = verbose
+        @postfork_require = postfork_require
+
         @message_queue = []
       end
 
@@ -29,7 +31,7 @@ module RSpec
         suppress_output unless @verbose
         debug "Worker #{@worker_number} starting"
         setup_load_path
-        initialize_rspec
+        require_postfork_preloads
 
         loop do
           debug "Waiting for message"
@@ -85,17 +87,29 @@ module RSpec
         $stdin.reopen(null_io_in)
       end
 
-      def initialize_rspec
-        rails_helper = File.expand_path("rails_helper.rb", @default_full_path)
-        spec_helper = File.expand_path("spec_helper.rb", @default_full_path)
-        if File.exist?(rails_helper)
-          debug "Requiring rails_helper to boot Rails..."
-          require rails_helper
-        elsif File.exist?(spec_helper)
-          debug "Requiring spec_helper..."
-          require spec_helper
+      def require_postfork_preloads
+        if @postfork_require == :spec_helper
+          rails_helper = File.expand_path("rails_helper.rb", @default_full_path)
+          spec_helper = File.expand_path("spec_helper.rb", @default_full_path)
+          if File.exist?(rails_helper)
+            debug "Requiring rails_helper to boot Rails..."
+            require rails_helper
+          elsif File.exist?(spec_helper)
+            debug "Requiring spec_helper..."
+            require spec_helper
+          else
+            debug "Neither rails_helper, nor spec_helper found, skipping..."
+          end
+        elsif @postfork_require
+          required_file = File.expand_path(@postfork_require, @default_full_path)
+          if File.exist?(required_file)
+            debug "Requiring #{required_file}..."
+            require required_file
+          else
+            debug "#{required_file} not found, skipping..."
+          end
         else
-          debug "Could detect neither rails_helper nor spec_helper"
+          debug "Skipping postfork require..."
         end
 
         debug "RSpec initialized, running before(:suite) hooks"

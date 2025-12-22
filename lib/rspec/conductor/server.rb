@@ -12,6 +12,7 @@ module RSpec
       # @option rspec_args [Array<String>] A list of rspec options
       # @option worker_number_offset [Integer] Start worker numbering with an offset
       # @option prefork_require [String] File required prior to forking
+      # @option postfork_require [String, Symbol] File required after forking
       # @option first_is_1 [Boolean] TEST_ENV_NUMBER for the first worker is "1" instead of ""
       # @option seed [Integer] Set a predefined starting seed
       # @option fail_fast_after [Integer, NilClass] Shut down the workers after a certain number of failures
@@ -22,6 +23,7 @@ module RSpec
         @worker_count = worker_count
         @worker_number_offset = opts.fetch(:worker_number_offset, 0)
         @prefork_require = opts.fetch(:prefork_require, nil)
+        @postfork_require = opts.fetch(:postfork_require, nil)
         @first_is_one = opts.fetch(:first_is_1, false)
         @seed = opts[:seed] || (Random.new_seed % 65_536)
         @fail_fast_after = opts[:fail_fast_after]
@@ -142,7 +144,8 @@ module RSpec
             worker_number: worker_number,
             socket: Protocol::Socket.new(child_socket),
             rspec_args: @rspec_args,
-            verbose: @verbose
+            verbose: @verbose,
+            postfork_require: @postfork_require,
           ).run
         end
 

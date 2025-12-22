@@ -50,6 +50,13 @@ Server process preloads the `rails_helper`, prepares a list of files to work, th
 
 * In order to make the CLI executable load and run fast, do not add any dependencies. That includes `active_support`.
 
+## Troubleshooting
+
+* `+[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called.` on M-based Mac machines
+    * This is a common issue with ruby code, compiled libraries and forking. Set `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` environment variable to work around this
+* Something gets loaded that shouldn't get loaded, or in a different order
+    * There are two simple ways to hook into preloads, exposed as CLI flags, `--prefork-require` (defaults to `config/application.rb`) and `--postfork-require` (defaults to either `rails_helper.rb` or `spec_helper.rb`, whichever is present on your machine). You can set any of those to whatever you need and control the load order
+
 ## FAQ
 
 * Why not preload the whole rails environment before spawning the workers instead of just `rails_helper`?

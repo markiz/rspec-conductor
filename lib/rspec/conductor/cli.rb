@@ -14,6 +14,7 @@ module RSpec
         verbose: false,
         display_retry_backtraces: false,
         prefork_require: 'config/application.rb',
+        postfork_require: :spec_helper,
       }.freeze
 
       def self.run(argv)
@@ -67,6 +68,14 @@ module RSpec
 
           opts.on("--no-prefork-require", "Do not preload config/application.rb") do
             @conductor_options[:prefork_require] = nil
+          end
+
+          opts.on("--postfork-require FILENAME", String, "Require this file after forking (default: either rails_helper.rb or spec_helper.rb, whichever is present)") do |f|
+            @conductor_options[:postfork_require] = f
+          end
+
+          opts.on("--no-postfork-require", "Do not load anything post-fork") do
+            @conductor_options[:postfork_require] = nil
           end
 
           opts.on("--first-is-1", 'ENV["TEST_ENV_NUMBER"] for the worker 1 is "1" rather than ""') do
