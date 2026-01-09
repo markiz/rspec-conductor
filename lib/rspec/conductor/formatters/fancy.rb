@@ -127,7 +127,7 @@ module RSpec
           total = results[:spec_files_total]
           processed = results[:spec_files_processed]
           pct = total.positive? ? processed.to_f / total : 0
-          bar_width = [tty_width - 60, 20].max
+          bar_width = [tty_width - 20, 20].max
 
           filled = (pct * bar_width).floor
           empty = bar_width - filled
