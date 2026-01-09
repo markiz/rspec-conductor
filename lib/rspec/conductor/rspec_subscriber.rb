@@ -52,6 +52,7 @@ module RSpec
         @shutdown_check.call
       end
 
+      # This one is invoked by rspec-retry, hence the slightly different api from example_* methods
       def retry(ex)
         @socket.send_message(
           type: :example_retried,
