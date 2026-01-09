@@ -249,6 +249,7 @@ module RSpec
 
         dead_workers.each do |worker, exitstatus|
           cleanup_worker(worker, status: :terminated)
+          @results[:worker_crashes] += 1
           debug "Worker #{worker[:number]} exited with status #{exitstatus.exitstatus}, signal #{exitstatus.termsig}"
         end
       rescue Errno::ECHILD
@@ -259,6 +260,7 @@ module RSpec
         puts "\n\n"
         puts "=" * ($stdout.tty? ? $stdout.winsize[1] : 80)
         puts "Results: #{@results[:passed]} passed, #{@results[:failed]} failed, #{@results[:pending]} pending"
+        puts "Worker crashes: #{@results[:worker_crashes]}" if @results[:worker_crashes].positive?
 
         if @results[:errors].any?
           puts "\nFailures:\n\n"

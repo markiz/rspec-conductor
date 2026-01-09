@@ -1,5 +1,6 @@
 ## [1.0.2] - 2026-01-09
 - Fix --postfork-require options
+- Fix worker crashes counter
 
 ## [1.0.1] - 2025-12-21
 
