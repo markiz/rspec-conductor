@@ -8,6 +8,8 @@ require "io/console"
 module RSpec
   module Conductor
     class Server
+      ChildWorkerProcess = Struct.new(:pid, :number, :status, :socket, :current_spec, keyword_init: true)
+
       MAX_SEED = 2**16
       WORKER_POLL_INTERVAL = 0.01
 
@@ -156,19 +158,19 @@ module RSpec
         child_socket.close
         debug "Worker #{worker_number} started with pid #{pid}"
 
-        @workers[pid] = {
+        @workers[pid] = ChildWorkerProcess.new(
           pid: pid,
           number: worker_number,
           status: :running,
           socket: Protocol::Socket.new(parent_socket),
           current_spec: nil,
-        }
+        )
         assign_work(@workers[pid])
       end
 
       def run_event_loop
         until @workers.empty?
-          workers_by_io = @workers.values.to_h { |w| [w[:socket].io, w] }
+          workers_by_io = @workers.values.to_h { |w| [w.socket.io, w] }
           readable_ios, = IO.select(workers_by_io.keys, nil, nil, WORKER_POLL_INTERVAL)
 
           readable_ios&.each do |io|
@@ -181,10 +183,10 @@ module RSpec
       end
 
       def handle_worker_message(worker)
-        message = worker[:socket].receive_message
+        message = worker.socket.receive_message
         return unless message
 
-        debug "Worker #{worker[:number]}: #{message[:type]}"
+        debug "Worker #{worker.number}: #{message[:type]}"
 
         case message[:type].to_sym
         when :example_passed
@@ -205,42 +207,42 @@ module RSpec
           end
         when :spec_complete
           @results[:spec_files_processed] += 1
-          worker[:current_spec] = nil
+          worker.current_spec = nil
           assign_work(worker)
         when :spec_error
           @results[:errors] << message
           debug "Spec error details: #{message[:error]}"
-          worker[:current_spec] = nil
+          worker.current_spec = nil
           assign_work(worker)
         when :spec_interrupted
           debug "Spec interrupted: #{message[:file]}"
-          worker[:current_spec] = nil
+          worker.current_spec = nil
         end
         @formatter.handle_worker_message(worker, message, @results)
       end
 
       def assign_work(worker)
         if @spec_queue.empty? || @shutting_down
-          debug "No more work for worker #{worker[:number]}, sending shutdown"
-          worker[:socket].send_message({ type: :shutdown })
+          debug "No more work for worker #{worker.number}, sending shutdown"
+          worker.socket.send_message({ type: :shutdown })
           cleanup_worker(worker)
         else
           @specs_started_at ||= Time.now
           spec_file = @spec_queue.shift
-          worker[:current_spec] = spec_file
-          debug "Assigning #{spec_file} to worker #{worker[:number]}"
+          worker.current_spec = spec_file
+          debug "Assigning #{spec_file} to worker #{worker.number}"
           message = { type: :worker_assigned_spec, file: spec_file }
-          worker[:socket].send_message(message)
+          worker.socket.send_message(message)
           @formatter.handle_worker_message(worker, message, @results)
         end
       end
 
       def cleanup_worker(worker, status: :shut_down)
-        @workers.delete(worker[:pid])
-        worker[:socket].close
-        worker[:status] = status
+        @workers.delete(worker.pid)
+        worker.socket.close
+        worker.status = status
         @formatter.handle_worker_message(worker, { type: :worker_shut_down }, @results)
-        Process.wait(worker[:pid])
+        Process.wait(worker.pid)
       rescue Errno::ECHILD
         nil
       end
@@ -254,7 +256,7 @@ module RSpec
         dead_workers.each do |worker, exitstatus|
           cleanup_worker(worker, status: :terminated)
           @results[:worker_crashes] += 1
-          debug "Worker #{worker[:number]} exited with status #{exitstatus.exitstatus}, signal #{exitstatus.termsig}"
+          debug "Worker #{worker.number} exited with status #{exitstatus.exitstatus}, signal #{exitstatus.termsig}"
         end
       rescue Errno::ECHILD
         nil

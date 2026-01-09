@@ -18,7 +18,7 @@ module RSpec
         end
 
         def handle_worker_message(worker, message, results)
-          @workers[worker[:number]] = worker
+          @workers[worker.number] = worker
           public_send(message[:type], worker, message) if respond_to?(message[:type])
           redraw(results)
         end
@@ -82,12 +82,12 @@ module RSpec
             worker = @workers[num]
             prefix = colorize("Worker #{num}: ", :cyan)
 
-            if worker[:status] == :shut_down
+            if worker.status == :shut_down
               prefix + "(finished)"
-            elsif worker[:status] == :terminated
+            elsif worker.status == :terminated
               prefix + colorize("(terminated)", :red)
-            elsif worker[:current_spec]
-              prefix + truncate(relative_path(worker[:current_spec]), tty_width - 15)
+            elsif worker.current_spec
+              prefix + truncate(relative_path(worker.current_spec), tty_width - 15)
             else
               prefix + "(idle)"
             end
