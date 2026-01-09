@@ -8,6 +8,9 @@ require "io/console"
 module RSpec
   module Conductor
     class Server
+      MAX_SEED = 2**16
+      WORKER_POLL_INTERVAL = 0.01
+
       # @option worker_count [Integer] How many workers to spin
       # @option rspec_args [Array<String>] A list of rspec options
       # @option worker_number_offset [Integer] Start worker numbering with an offset
@@ -25,7 +28,7 @@ module RSpec
         @prefork_require = opts.fetch(:prefork_require, nil)
         @postfork_require = opts.fetch(:postfork_require, nil)
         @first_is_one = opts.fetch(:first_is_1, false)
-        @seed = opts[:seed] || (Random.new_seed % 65_536)
+        @seed = opts[:seed] || (Random.new_seed % MAX_SEED)
         @fail_fast_after = opts[:fail_fast_after]
         @display_retry_backtraces = opts.fetch(:display_retry_backtraces, false)
         @verbose = opts.fetch(:verbose, false)
@@ -166,7 +169,7 @@ module RSpec
       def run_event_loop
         until @workers.empty?
           workers_by_io = @workers.values.to_h { |w| [w[:socket].io, w] }
-          readable_ios, = IO.select(workers_by_io.keys, nil, nil, 0.01)
+          readable_ios, = IO.select(workers_by_io.keys, nil, nil, WORKER_POLL_INTERVAL)
 
           readable_ios&.each do |io|
             worker = workers_by_io.fetch(io)
