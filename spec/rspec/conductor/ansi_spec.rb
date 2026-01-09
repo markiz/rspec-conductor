@@ -89,5 +89,11 @@ describe RSpec::Conductor::ANSI do
         expect(described_class.visible_chars("\e[2A\e[1;31mhello\e[0m")).to eq("hello")
       end
     end
+
+    describe '#tty_width' do
+      it 'returns some number' do
+        expect(described_class.tty_width).to be > 0
+      end
+    end
   end
 end

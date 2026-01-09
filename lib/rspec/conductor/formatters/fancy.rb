@@ -163,10 +163,6 @@ module RSpec
         def print_clear_line
           print clear_line if $stdout.tty?
         end
-
-        def tty_width
-          $stdout.tty? ? $stdout.winsize[1] : 80
-        end
       end
     end
   end

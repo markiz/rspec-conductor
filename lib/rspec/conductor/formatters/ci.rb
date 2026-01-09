@@ -2,6 +2,8 @@ module RSpec
   module Conductor
     module Formatters
       class CI
+        include Conductor::ANSI
+
         def initialize(frequency: 10)
           @frequency = frequency
           @last_printout = Time.now
@@ -34,12 +36,6 @@ module RSpec
             end
           end
           puts "-" * tty_width
-        end
-
-        private
-
-        def tty_width
-          $stdout.tty? ? $stdout.winsize[1] : 80
         end
       end
     end

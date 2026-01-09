@@ -97,6 +97,10 @@ module RSpec
       def visible_chars(string)
         string.gsub(/\e\[[0-9;]*[a-zA-Z]/, '')
       end
+
+      def tty_width
+        $stdout.tty? ? $stdout.winsize[1] : 80
+      end
     end
   end
 end
