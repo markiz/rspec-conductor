@@ -119,6 +119,7 @@ module RSpec
           worker_count: @conductor_options[:workers],
           worker_number_offset: @conductor_options[:offset],
           prefork_require: @conductor_options[:prefork_require],
+          postfork_require: @conductor_options[:postfork_require],
           first_is_1: @conductor_options[:first_is_1],
           seed: @conductor_options[:seed],
           fail_fast_after: @conductor_options[:fail_fast_after],
