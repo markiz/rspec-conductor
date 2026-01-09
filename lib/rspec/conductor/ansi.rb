@@ -87,11 +87,15 @@ module RSpec
       end
 
       # sticks invisible characters to visible ones when splitting (so that an ansi color code doesn"t get split mid-way)
-      def split_visible_char_groups(body)
-        invisible = "(?:\\e\\[[\\d;]*m)"
+      def split_visible_char_groups(string)
+        invisible = "(?:\\e\\[[0-9;]*[a-zA-Z])"
         visible = "(?:[^\\e])"
         scan_regex = Regexp.new("#{invisible}*#{visible}#{invisible}*|#{invisible}+")
-        body.scan(scan_regex)
+        string.scan(scan_regex)
+      end
+
+      def visible_chars(string)
+        string.gsub(/\e\[[0-9;]*[a-zA-Z]/, '')
       end
     end
   end

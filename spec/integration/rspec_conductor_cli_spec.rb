@@ -105,7 +105,7 @@ describe "rspec-conductor executable" do
       result = run_conductor(*scenario[:args])
 
       expect(result[:exit_code]).to eq(scenario[:expect_exit])
-      expect(result[:output]).to include(scenario[:expect_output])
+      expect(RSpec::Conductor::ANSI.visible_chars(result[:output])).to include(scenario[:expect_output])
     end
   end
 end

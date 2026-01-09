@@ -60,6 +60,7 @@ module RSpec
         start_workers
         run_event_loop
 
+        @results[:success] = @results[:failed].zero? && @results[:errors].empty? && @results[:worker_crashes].zero? && !@shutting_down
         print_summary
         exit_with_status
       end
@@ -259,8 +260,9 @@ module RSpec
       def print_summary
         puts "\n\n"
         puts "=" * ($stdout.tty? ? $stdout.winsize[1] : 80)
-        puts "Results: #{@results[:passed]} passed, #{@results[:failed]} failed, #{@results[:pending]} pending"
-        puts "Worker crashes: #{@results[:worker_crashes]}" if @results[:worker_crashes].positive?
+        puts "Randomized with seed #{@seed}"
+        puts "Results: #{colorize("#{@results[:passed]} passed", :green)}, #{ANSI.colorize("#{@results[:failed]} failed", :red)}, #{ANSI.colorize("#{@results[:pending]} pending", :yellow)}"
+        puts colorize("Worker crashes: #{@results[:worker_crashes]}", :red) if @results[:worker_crashes].positive?
 
         if @results[:errors].any?
           puts "\nFailures:\n\n"
@@ -276,14 +278,17 @@ module RSpec
           end
         end
 
-        puts "Randomized with seed #{@seed}"
         puts "Specs took: #{(Time.now - (@specs_started_at || @started_at)).to_f.round(2)}s"
         puts "Total runtime: #{(Time.now - @started_at).to_f.round(2)}s"
+        puts "Status: #{@results[:success] ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
+      end
+
+      def colorize(string, color)
+        $stdout.tty? ? ANSI.colorize(string, color) : string
       end
 
       def exit_with_status
-        success = @results[:failed].zero? && @results[:errors].empty? && @results[:worker_crashes].zero? && !@shutting_down
-        Kernel.exit(success ? 0 : 1)
+        Kernel.exit(@results[:success] ? 0 : 1)
       end
 
       def debug(message)

@@ -82,5 +82,12 @@ describe RSpec::Conductor::ANSI do
           .to eq(["\e[31m\e[34m\e[33mh", "e", "l", "l", "o"])
       end
     end
+
+    describe '#visible_chars' do
+      it 'strips all ansi codes' do
+        # <cursor up 2 lines><bold, red>hello<reset> => hello
+        expect(described_class.visible_chars("\e[2A\e[1;31mhello\e[0m")).to eq("hello")
+      end
+    end
   end
 end
