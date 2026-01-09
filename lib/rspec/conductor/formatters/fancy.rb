@@ -4,12 +4,7 @@ module RSpec
   module Conductor
     module Formatters
       class Fancy
-        RED = 31
-        GREEN = 32
-        YELLOW = 33
-        MAGENTA = 35
-        CYAN = 36
-        NORMAL = 0
+        include Conductor::ANSI
 
         def self.recommended?
           $stdout.tty? && $stdout.winsize[0] >= 30 && $stdout.winsize[1] >= 80
@@ -29,26 +24,26 @@ module RSpec
         end
 
         def example_passed(_worker, _message)
-          @dots << { char: ".", color: GREEN }
+          @dots << { char: ".", color: :green }
         end
 
         def example_failed(_worker, message)
-          @dots << { char: "F", color: RED }
+          @dots << { char: "F", color: :red }
           @last_error = message.slice(:description, :location, :exception_class, :message, :backtrace)
         end
 
         def example_retried(_worker, _message)
-          @dots << { char: "R", color: MAGENTA }
+          @dots << { char: "R", color: :magenta }
         end
 
         def example_pending(_worker, _message)
-          @dots << { char: "*", color: YELLOW }
+          @dots << { char: "*", color: :yellow }
         end
 
         private
 
         def redraw(results)
-          cursor_up(rewrap_lines(@last_rendered_lines).length)
+          print_cursor_up(rewrap_lines(@last_rendered_lines).length)
 
           lines = []
           lines << progress_bar(results)
@@ -62,19 +57,19 @@ module RSpec
 
           lines.each_with_index do |line, i|
             if @last_rendered_lines[i] == line
-              cursor_down(1)
+              print_cursor_down(1)
             else
-              clear_line
+              print_clear_line
               puts line
             end
           end
 
           if @last_rendered_lines.length && lines.length < @last_rendered_lines.length
             (@last_rendered_lines.length - lines.length).times do
-              clear_line
+              print_clear_line
               puts
             end
-            cursor_up(@last_rendered_lines.length - lines.length)
+            print_cursor_up(@last_rendered_lines.length - lines.length)
           end
 
           @last_rendered_lines = lines
@@ -85,12 +80,12 @@ module RSpec
 
           (1..max_worker_num).map do |num|
             worker = @workers[num]
-            prefix = colorize("Worker #{num}: ", CYAN)
+            prefix = colorize("Worker #{num}: ", :cyan)
 
             if worker[:status] == :shut_down
               prefix + "(finished)"
             elsif worker[:status] == :terminated
-              prefix + colorize("(terminated)", RED)
+              prefix + colorize("(terminated)", :red)
             elsif worker[:current_spec]
               prefix + truncate(relative_path(worker[:current_spec]), tty_width - 15)
             else
@@ -103,7 +98,7 @@ module RSpec
           return [] unless @last_error
 
           lines = []
-          lines << colorize("Most recent failure:", RED)
+          lines << colorize("Most recent failure:", :red)
           lines << "  #{@last_error[:description]}"
           lines << "  #{@last_error[:location]}"
 
@@ -124,16 +119,8 @@ module RSpec
           lines.flat_map do |line|
             _, indent, body = line.partition(/^\s*/)
             max_width = tty_width - indent.size
-            split_chars_respecting_ansi(body).each_slice(max_width).map { |chars| "#{indent}#{chars.join}" }
+            split_visible_char_groups(body).each_slice(max_width).map { |chars| "#{indent}#{chars.join}" }
           end
-        end
-
-        # sticks invisible characters to visible ones when splitting (so that an ansi color code doesn"t get split mid-way)
-        def split_chars_respecting_ansi(body)
-          invisible = "(?:\\e\\[[\\d;]*m)"
-          visible = "(?:[^\\e])"
-          scan_regex = Regexp.new("#{invisible}*#{visible}#{invisible}*|#{invisible}+")
-          body.scan(scan_regex)
         end
 
         def progress_bar(results)
@@ -145,7 +132,7 @@ module RSpec
           filled = (pct * bar_width).floor
           empty = bar_width - filled
 
-          bar = colorize("[", NORMAL) + colorize("▓" * filled, GREEN) + colorize(" " * empty, NORMAL) + colorize("]", NORMAL)
+          bar = colorize("[", :reset) + colorize("▓" * filled, :green) + colorize(" " * empty, :reset) + colorize("]", :reset)
           percentage = " #{(pct * 100).floor.to_s.rjust(3)}% (#{processed}/#{total})"
 
           bar + percentage
@@ -165,20 +152,16 @@ module RSpec
           str.length > max_length ? "...#{str[-(max_length - 3)..]}" : str
         end
 
-        def colorize(string, color)
-          $stdout.tty? ? "\e[#{color}m#{string}\e[#{NORMAL}m" : string
+        def print_cursor_up(n_lines)
+          print cursor_up(n_lines) if $stdout.tty?
         end
 
-        def cursor_up(n_lines)
-          print("\e[#{n_lines}A") if $stdout.tty? && n_lines.positive?
+        def print_cursor_down(n_lines)
+          print cursor_down(n_lines) if $stdout.tty?
         end
 
-        def cursor_down(n_lines)
-          print("\e[#{n_lines}B") if $stdout.tty? && n_lines.positive?
-        end
-
-        def clear_line
-          print("\e[2K\r") if $stdout.tty?
+        def print_clear_line
+          print clear_line if $stdout.tty?
         end
 
         def tty_width
