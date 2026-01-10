@@ -4,7 +4,7 @@ module RSpec
       class Plain
         include Conductor::ANSI
 
-        def handle_worker_message(_worker, message, _results)
+        def handle_worker_message(_worker_process, message, _results)
           public_send(message[:type], message) if respond_to?(message[:type])
         end
 

@@ -12,7 +12,7 @@ module RSpec
           @last_printout = Time.now
         end
 
-        def handle_worker_message(_worker, message, results)
+        def handle_worker_message(_worker_process, message, results)
           public_send(message[:type], message) if respond_to?(message[:type])
           print_status(results) if @last_printout + @printout_interval < Time.now
         end

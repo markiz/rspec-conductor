@@ -1,4 +1,5 @@
 require "pathname"
+require "set"
 
 module RSpec
   module Conductor
@@ -11,32 +12,32 @@ module RSpec
         end
 
         def initialize
-          @workers = Hash.new { |h, k| h[k] = {} }
+          @worker_processes = Set.new
           @last_rendered_lines = []
           @dots = []
           @last_error = nil
         end
 
-        def handle_worker_message(worker, message, results)
-          @workers[worker.number] = worker
-          public_send(message[:type], worker, message) if respond_to?(message[:type])
+        def handle_worker_message(worker_process, message, results)
+          @worker_processes <<  worker_process
+          public_send(message[:type], worker_process, message) if respond_to?(message[:type])
           redraw(results)
         end
 
-        def example_passed(_worker, _message)
+        def example_passed(_worker_process, _message)
           @dots << { char: ".", color: :green }
         end
 
-        def example_failed(_worker, message)
+        def example_failed(_worker_process, message)
           @dots << { char: "F", color: :red }
           @last_error = message.slice(:description, :location, :exception_class, :message, :backtrace)
         end
 
-        def example_retried(_worker, _message)
+        def example_retried(_worker_process, _message)
           @dots << { char: "R", color: :magenta }
         end
 
-        def example_pending(_worker, _message)
+        def example_pending(_worker_process, _message)
           @dots << { char: "*", color: :yellow }
         end
 
@@ -76,18 +77,15 @@ module RSpec
         end
 
         def worker_lines
-          return [] unless max_worker_num.positive?
+          @worker_processes.sort_by(&:number).map do |worker_process|
+            prefix = colorize("Worker #{worker_process.number}: ", :cyan)
 
-          (1..max_worker_num).map do |num|
-            worker = @workers[num]
-            prefix = colorize("Worker #{num}: ", :cyan)
-
-            if worker.status == :shut_down
+            if worker_process.status == :shut_down
               prefix + "(finished)"
-            elsif worker.status == :terminated
+            elsif worker_process.status == :terminated
               prefix + colorize("(terminated)", :red)
-            elsif worker.current_spec
-              prefix + truncate(relative_path(worker.current_spec), tty_width - 15)
+            elsif worker_process.current_spec
+              prefix + truncate(relative_path(worker_process.current_spec), tty_width - 15)
             else
               prefix + "(idle)"
             end
@@ -136,10 +134,6 @@ module RSpec
           percentage = " #{(pct * 100).floor.to_s.rjust(3)}% (#{processed}/#{total})"
 
           bar + percentage
-        end
-
-        def max_worker_num
-          @workers.keys.max || 0
         end
 
         def relative_path(filename)
