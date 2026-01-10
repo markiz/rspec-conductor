@@ -36,8 +36,6 @@ module RSpec
         @rspec_args = rspec_args
         @worker_processes = {}
         @spec_queue = []
-        @started_at = Time.now
-        @shutting_down = false
         @formatter = case opts[:formatter]
                      when "ci"
                        Formatters::CI.new
@@ -48,7 +46,7 @@ module RSpec
                      else
                        (!@verbose && Formatters::Fancy.recommended?) ? Formatters::Fancy.new : Formatters::Plain.new
                      end
-        @results = { passed: 0, failed: 0, pending: 0, errors: [], worker_crashes: 0, started_at: @started_at, spec_files_total: 0, spec_files_processed: 0 }
+        @results = Results.new
       end
 
       def run
@@ -62,8 +60,8 @@ module RSpec
 
         start_workers
         run_event_loop
+        @results.suite_complete
 
-        @results[:success] = @results[:failed].zero? && @results[:errors].empty? && @results[:worker_crashes].zero? && !@shutting_down
         print_summary
         exit_with_status
       end
@@ -97,10 +95,9 @@ module RSpec
       end
 
       def initiate_shutdown
-        return if @shutting_down
+        return if @results.shutting_down?
 
-        @shutting_down = true
-
+        @results.shut_down
         puts "Shutting down..."
         @worker_processes.each_value { |w| w.socket&.send_message({ type: :shutdown }) }
       end
@@ -112,7 +109,7 @@ module RSpec
         config.files_or_directories_to_run = paths
 
         @spec_queue = config.files_to_run.shuffle(random: Random.new(@seed))
-        @results[:spec_files_total] = @spec_queue.size
+        @results.spec_files_total = @spec_queue.size
       end
 
       def parsed_rspec_args
@@ -183,27 +180,26 @@ module RSpec
 
         case message[:type].to_sym
         when :example_passed
-          @results[:passed] += 1
+          @results.example_passed
         when :example_failed
-          @results[:failed] += 1
-          @results[:errors] << message
+          @results.example_failed(message)
 
-          if @fail_fast_after && @results[:failed] >= @fail_fast_after && !@shutting_down
-            debug "Shutting after #{@results[:failed]} failures"
+          if @fail_fast_after && @results.failed >= @fail_fast_after
+            debug "Shutting after #{@results.failed} failures"
             initiate_shutdown
           end
         when :example_pending
-          @results[:pending] += 1
+          @results.example_pending
         when :example_retried
           if @display_retry_backtraces
             puts "\nExample #{message[:description]} retried:\n  #{message[:location]}\n  #{message[:exception_class]}: #{message[:message]}\n#{message[:backtrace].map { "    #{_1}" }.join("\n")}\n"
           end
         when :spec_complete
-          @results[:spec_files_processed] += 1
+          @results.spec_file_complete
           worker_process.current_spec = nil
           assign_work(worker_process)
         when :spec_error
-          @results[:errors] << message
+          @results.spec_file_error(message)
           debug "Spec error details: #{message[:error]}"
           worker_process.current_spec = nil
           assign_work(worker_process)
@@ -215,12 +211,12 @@ module RSpec
       end
 
       def assign_work(worker_process)
-        if @spec_queue.empty? || @shutting_down
+        if @spec_queue.empty? || @results.shutting_down?
           debug "No more work for worker #{worker_process.number}, sending shutdown"
           worker_process.socket.send_message({ type: :shutdown })
           cleanup_worker_process(worker_process)
         else
-          @specs_started_at ||= Time.now
+          @results.spec_file_assigned
           spec_file = @spec_queue.shift
           worker_process.current_spec = spec_file
           debug "Assigning #{spec_file} to worker #{worker_process.number}"
@@ -248,7 +244,7 @@ module RSpec
 
         dead_worker_processes.each do |worker_process, exitstatus|
           cleanup_worker_process(worker_process, status: :terminated)
-          @results[:worker_crashes] += 1
+          @results.worker_crashed
           debug "Worker #{worker_process.number} exited with status #{exitstatus.exitstatus}, signal #{exitstatus.termsig}"
         end
       rescue Errno::ECHILD
@@ -258,12 +254,12 @@ module RSpec
       def print_summary
         puts "\n\n"
         puts "Randomized with seed #{@seed}"
-        puts "#{colorize("#{@results[:passed]} passed", :green)}, #{colorize("#{@results[:failed]} failed", :red)}, #{colorize("#{@results[:pending]} pending", :yellow)}"
-        puts colorize("Worker crashes: #{@results[:worker_crashes]}", :red) if @results[:worker_crashes].positive?
+        puts "#{colorize("#{@results.passed} passed", :green)}, #{colorize("#{@results.failed} failed", :red)}, #{colorize("#{@results.pending} pending", :yellow)}"
+        puts colorize("Worker crashes: #{@results.worker_crashes}", :red) if @results.worker_crashes.positive?
 
-        if @results[:errors].any?
+        if @results.errors.any?
           puts "\nFailures:\n\n"
-          @results[:errors].each_with_index do |error, i|
+          @results.errors.each_with_index do |error, i|
             puts "  #{i + 1}) #{error[:description]}"
             puts "     #{error[:location]}"
             puts "     #{error[:message]}" if error[:message]
@@ -275,9 +271,9 @@ module RSpec
           end
         end
 
-        puts "Specs took: #{(Time.now - (@specs_started_at || @started_at)).to_f.round(2)}s"
-        puts "Total runtime: #{(Time.now - @started_at).to_f.round(2)}s"
-        puts "Suite: #{@results[:success] ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
+        puts "Specs took: #{@results.specs_runtime.round(2)}s"
+        puts "Total runtime: #{@results.total_runtime.round(2)}s"
+        puts "Suite: #{@results.success? ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
       end
 
       def colorize(string, color)
@@ -285,7 +281,7 @@ module RSpec
       end
 
       def exit_with_status
-        Kernel.exit(@results[:success] ? 0 : 1)
+        Kernel.exit(@results.success? ? 0 : 1)
       end
 
       def debug(message)

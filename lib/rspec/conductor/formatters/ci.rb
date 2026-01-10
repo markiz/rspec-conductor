@@ -19,15 +19,15 @@ module RSpec
 
         def print_status(results)
           @last_printout = Time.now
-          pct_done = results[:spec_files_total].positive? ? results[:spec_files_processed].to_f / results[:spec_files_total] : 0
+          pct = results.spec_file_processed_percentage
 
           puts "-" * tty_width
           puts "Current status [#{Time.now.strftime("%H:%M:%S")}]:"
-          puts "Processed: #{results[:spec_files_processed]} / #{results[:spec_files_total]} (#{(pct_done * 100).floor}%)"
-          puts "#{results[:passed]} passed, #{results[:failed]} failed, #{results[:pending]} pending"
-          if results[:errors].any?
+          puts "Processed: #{results.spec_files_processed} / #{results.spec_files_total} (#{(pct * 100).floor}%)"
+          puts "#{results.passed} passed, #{results.failed} failed, #{results.pending} pending"
+          if results.errors.any?
             puts "Failures:\n"
-            results[:errors].each_with_index do |error, i|
+            results.errors.each_with_index do |error, i|
               puts "  #{i + 1}) #{error[:description]}"
               puts "     #{error[:location]}"
               puts "     #{error[:message]}" if error[:message]

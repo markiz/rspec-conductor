@@ -76,6 +76,19 @@ module RSpec
           @last_rendered_lines = lines
         end
 
+        def progress_bar(results)
+          pct = results.spec_file_processed_percentage
+          bar_width = [tty_width - 20, 20].max
+
+          filled = (pct * bar_width).floor
+          empty = bar_width - filled
+
+          bar = colorize("[", :reset) + colorize("▓" * filled, :green) + colorize(" " * empty, :reset) + colorize("]", :reset)
+          percentage = " #{(pct * 100).floor.to_s.rjust(3)}% (#{results.spec_files_processed}/#{results.spec_files_total})"
+
+          bar + percentage
+        end
+
         def worker_lines
           @worker_processes.sort_by(&:number).map do |worker_process|
             prefix = colorize("Worker #{worker_process.number}: ", :cyan)
@@ -119,21 +132,6 @@ module RSpec
             max_width = tty_width - indent.size
             split_visible_char_groups(body).each_slice(max_width).map { |chars| "#{indent}#{chars.join}" }
           end
-        end
-
-        def progress_bar(results)
-          total = results[:spec_files_total]
-          processed = results[:spec_files_processed]
-          pct = total.positive? ? processed.to_f / total : 0
-          bar_width = [tty_width - 20, 20].max
-
-          filled = (pct * bar_width).floor
-          empty = bar_width - filled
-
-          bar = colorize("[", :reset) + colorize("▓" * filled, :green) + colorize(" " * empty, :reset) + colorize("]", :reset)
-          percentage = " #{(pct * 100).floor.to_s.rjust(3)}% (#{processed}/#{total})"
-
-          bar + percentage
         end
 
         def relative_path(filename)
