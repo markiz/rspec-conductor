@@ -263,9 +263,8 @@ module RSpec
 
       def print_summary
         puts "\n\n"
-        puts "=" * ($stdout.tty? ? $stdout.winsize[1] : 80)
         puts "Randomized with seed #{@seed}"
-        puts "Results: #{colorize("#{@results[:passed]} passed", :green)}, #{colorize("#{@results[:failed]} failed", :red)}, #{colorize("#{@results[:pending]} pending", :yellow)}"
+        puts "#{colorize("#{@results[:passed]} passed", :green)}, #{colorize("#{@results[:failed]} failed", :red)}, #{colorize("#{@results[:pending]} pending", :yellow)}"
         puts colorize("Worker crashes: #{@results[:worker_crashes]}", :red) if @results[:worker_crashes].positive?
 
         if @results[:errors].any?
@@ -284,7 +283,7 @@ module RSpec
 
         puts "Specs took: #{(Time.now - (@specs_started_at || @started_at)).to_f.round(2)}s"
         puts "Total runtime: #{(Time.now - @started_at).to_f.round(2)}s"
-        puts "Status: #{@results[:success] ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
+        puts "Suite: #{@results[:success] ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
       end
 
       def colorize(string, color)
