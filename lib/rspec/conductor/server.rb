@@ -8,12 +8,6 @@ require "io/console"
 module RSpec
   module Conductor
     class Server
-      WorkerProcess = Struct.new(:pid, :number, :status, :socket, :current_spec, keyword_init: true) do
-        def hash
-          [number].hash
-        end
-      end
-
       MAX_SEED = 2**16
       WORKER_POLL_INTERVAL = 0.01
 
