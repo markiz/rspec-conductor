@@ -31,20 +31,22 @@ rspec-conductor --workers 10 spec
 
 `--verbose` flag is especially useful for troubleshooting.
 
-To set up the databases (if you are using this with rails) you can use a rake task from the parallel_tests gem
-
-```bash
-rails 'parallel:drop[10]' 'parallel:setup[10]'
-
-# if you like the first-is-1 mode, keeping your parallel test envs separate from your regular env:
-PARALLEL_TEST_FIRST_IS_1=true rails 'parallel:drop[10]' 'parallel:setup[10]'
-```
-
-I might consider porting that rake task in the near future.
-
 ## Mechanics
 
-Server process preloads the `rails_helper`, prepares a list of files to work, then spawns the workers, each with `ENV['TEST_ENV_NUMBER'] = <worker_number>` (same as parallel-tests). The two communicate over a standard unix socket. Message format is basically a tuple of `(size, json_payload)`. It should also be possible to run this process over the network, but I haven't found a solid usecase for this.
+Server process preloads the `rails_helper`, prepares a list of files to work, then spawns the workers, each with `ENV['TEST_ENV_NUMBER'] = <worker_number>` (same as parallel-tests). The two communicate over a standard unix socket. Message format is basically a tuple of `(size, json_payload)`. It should also be possible to run this process over the network, but I haven't found a solid usecase for this yet.
+
+## Setting up the databases in Rails
+
+In order to bootstrap the test environment, there is a rake task:
+
+```bash
+# Recreate and seed test databases with TEST_ENV_NUMBER 1 to 10
+rails rspec_conductor:setup[10]
+
+# If you like the first-is-1 mode, keeping your parallel test envs separate from your regular env:
+RSPEC_CONDUCTOR_FIRST_IS_1=true rails rspec_conductor:setup[10]
+```
+
 
 ## Development notes
 
