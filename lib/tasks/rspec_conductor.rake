@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../rspec/conductor/util/terminal"
+require_relative "../rspec/conductor/util/child_process"
 
 namespace :rspec_conductor do
   desc "Create parallel test databases (default: 4)"
@@ -92,7 +93,6 @@ module RSpec
         end
 
         def db_configs_for_env_number(env_number)
-          ENV["TEST_ENV_NUMBER"] = env_number
           reload_database_configuration!
 
           configs = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env)
@@ -107,116 +107,31 @@ module RSpec
           # Close connections before forking to avoid sharing file descriptors
           ActiveRecord::Base.connection_pool.disconnect!
 
-          # Initialize terminal for updatable lines
           terminal = RSpec::Conductor::Util::Terminal.new
-          worker_lines = {}
-
-          worker_pids = []
-          result_pipes = []
-          stdout_pipes = []
+          processes = []
 
           count.times do |i|
             worker_number = i + 1
-            env_number = if first_is_1? || worker_number != 1
-              worker_number.to_s
-            else
-              ""
+            env_number = (first_is_1? || worker_number != 1) ? worker_number.to_s: ""
+            line = terminal.line("#{worker_number}: starting...")
+
+            process = RSpec::Conductor::Util::ChildProcess.fork do
+              ENV["TEST_ENV_NUMBER"] = env_number
+              puts "#{action} test database #{worker_number} of #{count} (TEST_ENV_NUMBER=#{env_number.inspect})"
+              yield worker_number, env_number
             end
 
-            # Create a line for this worker
-            worker_lines[worker_number] = terminal.line("Worker #{worker_number}: starting...")
-
-            # Pipe for success/failure result
-            result_read, result_write = IO.pipe
-            result_pipes << result_read
-
-            # Pipe for stdout capture
-            stdout_read, stdout_write = IO.pipe
-            stdout_pipes << stdout_read
-
-            pid = fork do
-              result_read.close
-              stdout_read.close
-
-              # Redirect stdout to the pipe
-              $stdout = stdout_write
-              $stderr = stdout_write
-              STDOUT.reopen(stdout_write)
-              STDERR.reopen(stdout_write)
-
-              begin
-                puts "#{action} test database #{worker_number} of #{count} (TEST_ENV_NUMBER=#{env_number.inspect})"
-                yield worker_number, env_number
-                result_write.write("OK")
-              rescue => e
-                result_write.write("ERROR:#{e.message}")
-                exit 1
-              ensure
-                result_write.close
-                stdout_write.close
-              end
-
-              exit 0
-            end
-
-            result_write.close
-            stdout_write.close
-            worker_pids << pid
+            process.on_stdout { |text| line.update("#{worker_number}: #{text}") }
+            process.on_stderr { |text| line.update("#{worker_number}: [ERROR] #{text}") }
+            processes << process
           end
 
-          # Parent: collect stdout from each child and update the corresponding line
-          stdout_buffers = Hash.new { |h, k| h[k] = String.new }
+          RSpec::Conductor::Util::ChildProcess.wait_all(processes)
 
-          # Use non-blocking IO to read from all pipes
-          until stdout_pipes.all?(&:closed?)
-            ready_pipes, = IO.select(stdout_pipes.reject(&:closed?), nil, nil, 0.1)
-
-            ready_pipes&.each do |pipe|
-              begin
-                index = stdout_pipes.index(pipe)
-                worker_number = index + 1
-
-                data = pipe.read_nonblock(4096, exception: false)
-                if data == :wait_readable
-                  next
-                elsif data.nil? || data.empty?
-                  pipe.close
-                else
-                  stdout_buffers[worker_number] << data
-
-                  # Process complete lines and update the worker's line with the latest
-                  while (newline_pos = stdout_buffers[worker_number].index("\n"))
-                    line = stdout_buffers[worker_number].slice!(0..newline_pos).chomp
-                    worker_lines[worker_number].update("Worker #{worker_number}: #{line}")
-                  end
-                end
-              rescue IOError, EOFError
-                pipe.close
-              end
-            end
-          end
-
-          # Update with any remaining partial content
-          stdout_buffers.each do |worker_number, buffer|
-            worker_lines[worker_number].update("Worker #{worker_number}: #{buffer.chomp}") unless buffer.empty?
-          end
-
-          # Move cursor below all worker lines before printing final status
           terminal.scroll_to_bottom
 
-          # Collect results from result pipes
-          errors = []
-          worker_pids.each_with_index do |pid, i|
-            read_pipe = result_pipes[i]
-            result = read_pipe.read
-            read_pipe.close
-
-            _, status = Process.wait2(pid)
-
-            if status.exitstatus != 0 || result.start_with?("ERROR:")
-              error_msg = result.start_with?("ERROR:") ? result.sub("ERROR:", "") : "Process exited with status #{status.exitstatus}"
-              errors << { worker: i + 1, error: error_msg }
-            end
+          errors = processes.reject(&:success?).map do |p|
+            { worker: p.worker_number, error: p.error_message }
           end
 
           # Restore original database configuration in parent
@@ -225,7 +140,7 @@ module RSpec
 
           if errors.any?
             puts "\nCompleted with #{errors.length} error(s):"
-            errors.each { |e| puts "  Worker #{e[:worker]}: #{e[:error]}" }
+            errors.each { |e| puts "  #{e[:worker]}: #{e[:error]}" }
             raise "Database operation failed for #{errors.length} worker(s)"
           else
             puts "\nSuccessfully completed #{action.downcase} for #{count} database(s)"
