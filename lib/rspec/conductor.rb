@@ -14,6 +14,7 @@ require_relative "conductor/rspec_subscriber"
 require_relative "conductor/formatters/plain"
 require_relative "conductor/formatters/ci"
 require_relative "conductor/formatters/fancy"
+require_relative "conductor/util/terminal"
 
 module RSpec
   module Conductor

@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "io/console"
+
 module RSpec
   module Conductor
     module ANSI
@@ -98,8 +100,10 @@ module RSpec
         string.gsub(/\e\[[0-9;]*[a-zA-Z]/, '')
       end
 
-      def tty_width
-        $stdout.tty? ? $stdout.winsize[1] : 80
+      def tty_width(tty = $stdout)
+        return 80 unless tty.tty?
+
+        tty.winsize[1]
       end
     end
   end

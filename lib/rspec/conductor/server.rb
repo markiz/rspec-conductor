@@ -3,7 +3,6 @@
 require "English"
 require "socket"
 require "json"
-require "io/console"
 
 module RSpec
   module Conductor
