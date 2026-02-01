@@ -6,8 +6,8 @@ module RSpec
       class ChildProcess
         attr_reader :pid, :exit_status
 
-        def self.fork(&block)
-          new.tap { |process| process.fork(&block) }
+        def self.fork(**args, &block)
+          new(**args).fork(&block)
         end
 
         def self.wait_all(processes)
@@ -24,17 +24,15 @@ module RSpec
           processes.each(&:finalize)
         end
 
-        def initialize
-          @stdout_callback = nil
-          @stderr_callback = nil
+        def initialize(on_stdout: nil, on_stderr: nil)
+          @on_stdout = on_stdout
+          @on_stderr = on_stderr
           @pid = nil
           @exit_status = nil
-          @error_message = nil
           @stdout_pipe = nil
           @stderr_pipe = nil
-          @result_pipe = nil
-          @stdout_buffer = String.new
-          @stderr_buffer = String.new
+          @stdout_buffer = String.new(encoding: Encoding.default_external)
+          @stderr_buffer = String.new(encoding: Encoding.default_external)
           @done = false
         end
 
@@ -43,18 +41,17 @@ module RSpec
         end
 
         def fork(&block)
+          raise ArgumentError, '.fork should be called with a block' unless block_given?
+
           stdout_read, stdout_write = IO.pipe
           stderr_read, stderr_write = IO.pipe
-          result_read, result_write = IO.pipe
 
           @stdout_pipe = stdout_read
           @stderr_pipe = stderr_read
-          @result_pipe = result_read
 
           @pid = Kernel.fork do
             stdout_read.close
             stderr_read.close
-            result_read.close
 
             $stdout = stdout_write
             $stderr = stderr_write
@@ -62,13 +59,11 @@ module RSpec
             STDERR.reopen(stderr_write)
 
             begin
-              block.call if block_given?
-              result_write.write("OK")
+              yield
             rescue => e
-              result_write.write("#{e.class}: #{e.message}")
+              stderr_write.puts "#{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"
               exit 1
             ensure
-              result_write.close
               stdout_write.close
               stderr_write.close
             end
@@ -78,15 +73,8 @@ module RSpec
 
           stdout_write.close
           stderr_write.close
-          result_write.close
-        end
 
-        def on_stdout(&block)
-          @stdout_callback = block
-        end
-
-        def on_stderr(&block)
-          @stderr_callback = block
+          self
         end
 
         def done?
@@ -94,13 +82,13 @@ module RSpec
         end
 
         def read_available(pipe)
-          return if @done
+          return if done?
           return if pipe.closed?
 
           buffer, callback = if pipe == @stdout_pipe
-            [@stdout_buffer, @stdout_callback]
+            [@stdout_buffer, @on_stdout]
           elsif pipe == @stderr_pipe
-            [@stderr_buffer, @stderr_callback]
+            [@stderr_buffer, @on_stderr]
           else
             return
           end
@@ -121,21 +109,13 @@ module RSpec
         end
 
         def finalize
-          return if @done
+          return if done?
 
-          process_buffer(@stdout_buffer, @stdout_callback, partial: true)
-          process_buffer(@stderr_buffer, @stderr_callback, partial: true)
-
-          result = @result_pipe.read
-          @result_pipe.close
+          process_buffer(@stdout_buffer, @on_stdout, partial: true)
+          process_buffer(@stderr_buffer, @on_stderr, partial: true)
 
           _, status = Process.wait2(@pid)
           @exit_status = status.exitstatus
-
-          if @exit_status != 0 || result != 'OK'
-            @error_message = result.to_s.length > 0 ? result.to_s : "Process exited with status #{@exit_status}"
-          end
-
           @done = true
           self
         end
@@ -145,11 +125,7 @@ module RSpec
         end
 
         def success?
-          @exit_status == 0 && @error_message.nil?
-        end
-
-        def error_message
-          @error_message
+          @exit_status == 0
         end
 
         private
@@ -164,6 +140,8 @@ module RSpec
             end
           else
             while (newline_pos = buffer.index("\n"))
+              # String#slice! seems like it was invented specifically for this scenario,
+              # when you need to cut out a string fragment destructively
               line = buffer.slice!(0..newline_pos).chomp
               callback.call(line)
             end

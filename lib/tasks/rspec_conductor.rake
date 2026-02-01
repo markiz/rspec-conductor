@@ -1,38 +1,5 @@
 # frozen_string_literal: true
 
-namespace :rspec_conductor do
-  desc "Create parallel test databases (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
-  task :create, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
-    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
-    RSpec::Conductor::DatabaseTasks.create_databases(count)
-  end
-
-  desc "Drop parallel test databases (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
-  task :drop, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
-    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
-    RSpec::Conductor::DatabaseTasks.drop_databases(count)
-  end
-
-  desc "Setup parallel test databases (create + schema load + seed) (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
-  task :setup, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
-    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
-    RSpec::Conductor::DatabaseTasks.setup_databases(count)
-  end
-
-  # When RAILS_ENV is not set, Rails.env can default to development,
-  # which would have reaching consequences for our setup script.
-  # That's why we're forcing RAILS_ENV=test and spawning the rails task again.
-  task :set_rails_env_to_test do
-    if ENV['RAILS_ENV']
-      require_relative "../rspec/conductor/util/terminal"
-      require_relative "../rspec/conductor/util/child_process"
-    else
-      system({ "RAILS_ENV" => "test" }, "rake", *Rake.application.top_level_tasks)
-      exit
-    end
-  end
-end
-
 module RSpec
   module Conductor
     module DatabaseTasks
@@ -94,32 +61,44 @@ module RSpec
           ActiveRecord::Base.connection_pool.disconnect!
 
           terminal = Conductor::Util::Terminal.new
-          processes = count.times.each_with_object({}) do |i, memo|
+          children = count.times.map do |i|
             worker_number = i + 1
             env_number = (first_is_1? || worker_number != 1) ? worker_number.to_s: ""
             line = terminal.line("#{worker_number}: starting...")
+            stderr_buffer = String.new(encoding: Encoding.default_external)
 
-            process = Conductor::Util::ChildProcess.fork do
+            on_stdout = ->(text) do
+              line.update("#{worker_number}: #{text}")
+            end
+            on_stderr = ->(text) do
+              stderr_buffer << "#{text}\n"
+              line.update("#{worker_number}: [STDERR] #{text}")
+            end
+
+            process = Conductor::Util::ChildProcess.fork(on_stdout: on_stdout, on_stderr: on_stderr) do
               ENV["TEST_ENV_NUMBER"] = env_number
               puts "#{action} test database #{worker_number} of #{count} (TEST_ENV_NUMBER=#{env_number.inspect})"
               yield
             end
 
-            process.on_stdout { |text| line.update("#{worker_number}: #{text}") }
-            process.on_stderr { |text| line.update("#{worker_number}: [STDERR] #{text}") }
-
-            memo[worker_number] = process
+            { process: process, worker_number: worker_number, stderr: stderr_buffer }
           end
-          Conductor::Util::ChildProcess.wait_all(processes.values)
+          Conductor::Util::ChildProcess.wait_all(children.map { |v| v[:process] })
           terminal.scroll_to_bottom
 
-          errors = processes.reject { |_, process| process.success? }.map { |worker_number, process| { worker_number: worker_number, error: process.error_message } }
-          if errors.any?
-            puts "\nCompleted with #{errors.length} error(s):"
-            errors.each { |e| puts "#{e[:worker_number]}: #{e[:error]}" }
-            raise "Database operation failed for #{errors.length} worker(s)"
-          else
+          failed_children = children.reject { |child| child[:process].success? }
+          if failed_children.none?
             puts "\nSuccessfully completed #{action.downcase} for #{count} database(s)"
+          else
+            puts "\nCompleted with #{failed_children.length} error(s):"
+            failed_children.each do |child|
+              puts "Process #{child[:worker_number]}"
+              puts "STDERR output:"
+              child[:stderr].each_line { |line| puts "    #{line}" }
+              puts
+            end
+
+            raise "Database operation failed for #{failed_children.length} worker(s)"
           end
         end
 
@@ -143,6 +122,39 @@ module RSpec
           end
         end
       end
+    end
+  end
+end
+
+namespace :rspec_conductor do
+  desc "Create parallel test databases (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
+  task :create, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
+    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
+    RSpec::Conductor::DatabaseTasks.create_databases(count)
+  end
+
+  desc "Drop parallel test databases (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
+  task :drop, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
+    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
+    RSpec::Conductor::DatabaseTasks.drop_databases(count)
+  end
+
+  desc "Setup parallel test databases (drop + create + schema load + seed) (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
+  task :setup, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
+    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
+    RSpec::Conductor::DatabaseTasks.setup_databases(count)
+  end
+
+  # When RAILS_ENV is not set, Rails.env can default to development,
+  # which would have reaching consequences for our setup script.
+  # That's why we're forcing RAILS_ENV=test and spawning the rails task again.
+  task :set_rails_env_to_test do
+    if ENV['RAILS_ENV']
+      require_relative "../rspec/conductor/util/terminal"
+      require_relative "../rspec/conductor/util/child_process"
+    else
+      system({ "RAILS_ENV" => "test" }, "rake", *Rake.application.top_level_tasks)
+      exit
     end
   end
 end
