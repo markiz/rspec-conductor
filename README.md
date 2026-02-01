@@ -44,9 +44,10 @@ In order to bootstrap the test environment, there is a rake task:
 rails rspec_conductor:setup[10]
 
 # If you like the first-is-1 mode, keeping your parallel test envs separate from your regular env:
-RSPEC_CONDUCTOR_FIRST_IS_1=true rails rspec_conductor:setup[10]
+RSPEC_CONDUCTOR_FIRST_IS_1=1 rails rspec_conductor:setup[10]
 ```
 
+You can also set the env variable `RSPEC_CONDUCTOR_DEFAULT_WORKER_COUNT` to change the default worker count to avoid typing the quotes for the rake task arguments in zsh.
 
 ## Development notes
 
