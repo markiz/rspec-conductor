@@ -184,7 +184,7 @@ module RSpec
           @results.example_failed(message)
 
           if @fail_fast_after && @results.failed >= @fail_fast_after
-            debug "Shutting after #{@results.failed} failures"
+            debug "Shutting down after #{@results.failed} failures"
             initiate_shutdown
           end
         when :example_pending
@@ -210,13 +210,14 @@ module RSpec
       end
 
       def assign_work(worker_process)
-        if @spec_queue.empty? || @results.shutting_down?
+        spec_file = @spec_queue.shift
+
+        if @results.shutting_down? || !spec_file
           debug "No more work for worker #{worker_process.number}, sending shutdown"
           worker_process.socket.send_message({ type: :shutdown })
           cleanup_worker_process(worker_process)
         else
           @results.spec_file_assigned
-          spec_file = @spec_queue.shift
           worker_process.current_spec = spec_file
           debug "Assigning #{spec_file} to worker #{worker_process.number}"
           message = { type: :worker_assigned_spec, file: spec_file }
