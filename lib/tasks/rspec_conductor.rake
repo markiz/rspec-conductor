@@ -18,6 +18,17 @@ namespace :rspec_conductor do
     count = (args[:count] || 4).to_i
     RSpec::Conductor::DatabaseTasks.setup_databases(count)
   end
+
+  task :environment do
+    if ENV['RAILS_ENV']
+      Rake::Task['environment'].invoke # root-level rails environment task
+    else
+      # we have to spawn another process because at this point Rails.env
+      # could have already defaulted to development
+      system({ "RAILS_ENV" => "test" }, "rake", *Rake.application.top_level_tasks)
+      exit
+    end
+  end
 end
 
 module RSpec
@@ -78,16 +89,12 @@ module RSpec
           ENV["RSPEC_CONDUCTOR_FIRST_IS_1"] == "1"
         end
 
-        def env_name
-          ENV['RAILS_ENV'] ||= 'test'
-        end
-
         def db_configs_for_env_number(env_number)
           ENV["TEST_ENV_NUMBER"] = env_number
           reload_database_configuration!
 
-          configs = ActiveRecord::Base.configurations.configs_for(env_name: env_name)
-          raise ArgumentError, "could not find or parse configuration for the env #{env_name}" unless configs.any?
+          configs = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env)
+          raise ArgumentError, "could not find or parse configuration for the env #{Rails.env}" unless configs.any?
 
           configs
         end
