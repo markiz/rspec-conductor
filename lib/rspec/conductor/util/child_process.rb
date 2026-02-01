@@ -65,7 +65,7 @@ module RSpec
               block.call if block_given?
               result_write.write("OK")
             rescue => e
-              result_write.write("ERROR:#{e.message}")
+              result_write.write("#{e.class}: #{e.message}")
               exit 1
             ensure
               result_write.close
@@ -132,8 +132,8 @@ module RSpec
           _, status = Process.wait2(@pid)
           @exit_status = status.exitstatus
 
-          if @exit_status != 0 || result.start_with?("ERROR:")
-            @error_message = result.start_with?("ERROR:") ? result.sub("ERROR:", "") : "Process exited with status #{@exit_status}"
+          if @exit_status != 0 || result != 'OK'
+            @error_message = result.to_s.length > 0 ? result.to_s : "Process exited with status #{@exit_status}"
           end
 
           @done = true
