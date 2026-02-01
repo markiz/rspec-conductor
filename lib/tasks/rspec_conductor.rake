@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "../rspec/conductor/util/terminal"
+
 namespace :rspec_conductor do
   desc "Create parallel test databases (default: 4)"
   task :create, [:count] => :environment do |_t, args|
@@ -105,6 +107,10 @@ module RSpec
           # Close connections before forking to avoid sharing file descriptors
           ActiveRecord::Base.connection_pool.disconnect!
 
+          # Initialize terminal for updatable lines
+          terminal = RSpec::Conductor::Util::Terminal.new
+          worker_lines = {}
+
           worker_pids = []
           result_pipes = []
           stdout_pipes = []
@@ -116,6 +122,9 @@ module RSpec
             else
               ""
             end
+
+            # Create a line for this worker
+            worker_lines[worker_number] = terminal.line("Worker #{worker_number}: starting...")
 
             # Pipe for success/failure result
             result_read, result_write = IO.pipe
@@ -155,7 +164,7 @@ module RSpec
             worker_pids << pid
           end
 
-          # Parent: collect stdout from each child and prefix it
+          # Parent: collect stdout from each child and update the corresponding line
           stdout_buffers = Hash.new { |h, k| h[k] = String.new }
 
           # Use non-blocking IO to read from all pipes
@@ -175,10 +184,10 @@ module RSpec
                 else
                   stdout_buffers[worker_number] << data
 
-                  # Process complete lines
+                  # Process complete lines and update the worker's line with the latest
                   while (newline_pos = stdout_buffers[worker_number].index("\n"))
-                    line = stdout_buffers[worker_number].slice!(0..newline_pos)
-                    puts "#{worker_number}: #{line}"
+                    line = stdout_buffers[worker_number].slice!(0..newline_pos).chomp
+                    worker_lines[worker_number].update("Worker #{worker_number}: #{line}")
                   end
                 end
               rescue IOError, EOFError
@@ -187,10 +196,13 @@ module RSpec
             end
           end
 
-          # Flush any remaining partial lines
+          # Update with any remaining partial content
           stdout_buffers.each do |worker_number, buffer|
-            puts "#{worker_number}: #{buffer}" unless buffer.empty?
+            worker_lines[worker_number].update("Worker #{worker_number}: #{buffer.chomp}") unless buffer.empty?
           end
+
+          # Move cursor below all worker lines before printing final status
+          terminal.scroll_to_bottom
 
           # Collect results from result pipes
           errors = []
