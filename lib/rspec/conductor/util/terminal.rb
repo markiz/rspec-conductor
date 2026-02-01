@@ -78,6 +78,8 @@ module RSpec
           @output.flush unless tty?
         end
 
+        # For non-tty terminals, we do not print the cursor-moving characters
+        # (otherwise the logs wouldn't be shown in the printout)
         def move_cursor_to(cursor_y)
           return unless tty?
 
@@ -95,8 +97,10 @@ module RSpec
           # a 79 char string is 1 line
           # a 80 char string is 1 line
           # a 81 char string is 2 lines
-          length = [visible_chars(string).length - 1, 0].max
-          (length / tty_width(@output)) + 1
+          length = visible_chars(string).length
+          return 1 if length == 0
+
+          ((length - 1) / tty_width(@output)) + 1
         end
 
         def truncate_to_tty_width(string)
