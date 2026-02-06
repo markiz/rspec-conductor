@@ -48,7 +48,7 @@ module RSpec
 
             old_line_char_groups = split_visible_char_groups(old_line)
             new_line_char_groups = split_visible_char_groups(new_line)
-            first_diff_index = new_line_char_groups.size.times.detect { |i| new_line_char_groups[i] != old_line_char_groups } || new_line_char_groups.size
+            first_diff_index = new_line_char_groups.size.times.detect { |i| new_line_char_groups[i] != old_line_char_groups[i] } || new_line_char_groups.size
 
             changed_part = new_line_char_groups[first_diff_index..-1]
             buf << move_cursor(row, first_diff_index)
