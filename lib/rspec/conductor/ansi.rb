@@ -76,16 +76,36 @@ module RSpec
         COLOR_CODES.fetch(color, COLOR_CODES[:reset])
       end
 
-      def cursor_up(n_lines)
-        n_lines.positive? ? "\e[#{n_lines}A" : ""
+      def cursor_up(n = 1)
+        n.positive? ? "\e[#{n}A" : ""
       end
 
-      def cursor_down(n_lines)
-        n_lines.positive? ? "\e[#{n_lines}B" : ""
+      def cursor_down(n = 1)
+        n.positive? ? "\e[#{n}B" : ""
+      end
+
+      def cursor_forward(n = 1)
+        n.positive? ? "\e[#{n}C" : ""
+      end
+
+      def cursor_back(n = 1)
+        n.positive? ? "\e[#{n}D" : ""
+      end
+
+      def cursor_column(col)
+        "\e[#{col}G"
+      end
+
+      def cursor_end_of_line
+        "\e[999C"
       end
 
       def clear_line
         "\e[2K\r"
+      end
+
+      def clear_line_forward
+        "\e[K"
       end
 
       # sticks invisible characters to visible ones when splitting (so that an ansi color code doesn't get split mid-way)
