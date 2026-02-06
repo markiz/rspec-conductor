@@ -10,3 +10,4 @@ if ENV["RSPEC_VERSION"].to_s.empty?
 else
   gem "rspec", "~> #{ENV["RSPEC_VERSION"]}"
 end
+gem "benchmark-ips"
