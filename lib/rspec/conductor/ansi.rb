@@ -7,6 +7,8 @@ module RSpec
     module ANSI
       module_function
 
+      ANSI_SEQUENCE_REGEX = /\e\[[0-9;]*[a-zA-Z]/
+      VISIBLE_CHAR_GROUP_REGEX = /#{ANSI_SEQUENCE_REGEX}*[^\e]#{ANSI_SEQUENCE_REGEX}*|#{ANSI_SEQUENCE_REGEX}+/
       COLOR_CODES = {
         # Reset
         reset: "0",
@@ -110,14 +112,11 @@ module RSpec
 
       # sticks invisible characters to visible ones when splitting (so that an ansi color code doesn't get split mid-way)
       def split_visible_char_groups(string)
-        invisible = "(?:\\e\\[[0-9;]*[a-zA-Z])"
-        visible = "(?:[^\\e])"
-        scan_regex = Regexp.new("#{invisible}*#{visible}#{invisible}*|#{invisible}+")
-        string.scan(scan_regex)
+        string.scan(VISIBLE_CHAR_GROUP_REGEX)
       end
 
       def visible_chars(string)
-        string.gsub(/\e\[[0-9;]*[a-zA-Z]/, '')
+        string.gsub(ANSI_SEQUENCE_REGEX, '')
       end
 
       def tty_width(tty = $stdout)
