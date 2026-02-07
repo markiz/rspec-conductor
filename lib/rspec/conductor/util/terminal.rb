@@ -8,6 +8,8 @@ module RSpec
       class Terminal
         include Util::ANSI
 
+        INDENTATION_REGEX = /^(\s+)(.*)$/
+
         class Line
           attr_reader :content, :truncate
 
@@ -62,16 +64,16 @@ module RSpec
           @wrapper_box = Box.new(self)
         end
 
-        def line(*args, **kwargs, &block)
-          @wrapper_box.line(*args, **kwargs, &block)
+        def line(content = "", truncate: true)
+          @wrapper_box.line(content, truncate: truncate)
         end
 
-        def puts(*args, **kwargs, &block)
-          @wrapper_box.puts(*args, **kwargs, &block)
+        def puts(content = "")
+          @wrapper_box.puts(content)
         end
 
-        def box(*args, **kwargs, &block)
-          @wrapper_box.box(*args, **kwargs, &block)
+        def box
+          @wrapper_box.box
         end
 
         def scroll_to_bottom
@@ -95,7 +97,7 @@ module RSpec
           return string unless tty?
 
           string.split("\n").flat_map do |line|
-            _, indent, body = line.partition(/^\s*/)
+            indent, body = line.match(INDENTATION_REGEX)&.captures || ["", line]
             max_width = tty_width(@output) - indent.size
             split_visible_char_groups(body).each_slice(max_width).map { |chars| "#{indent}#{chars.join}" }
           end

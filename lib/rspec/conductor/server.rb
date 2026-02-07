@@ -43,7 +43,7 @@ module RSpec
                      when "plain"
                        Formatters::Plain.new
                      else
-                       (!@verbose && Formatters::Fancy.recommended?) ? Formatters::Fancy.new : Formatters::Plain.new
+                       (!@verbose && Formatters::Fancy.recommended?) ? Formatters::Fancy.new(worker_count: worker_count) : Formatters::Plain.new
                      end
         @results = Results.new
       end
