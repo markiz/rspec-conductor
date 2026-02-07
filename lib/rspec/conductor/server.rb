@@ -39,7 +39,7 @@ module RSpec
                      when "ci"
                        Formatters::CI.new
                      when "fancy"
-                       Formatters::Fancy.new
+                       Formatters::Fancy.new(worker_count: worker_count)
                      when "plain"
                        Formatters::Plain.new
                      else
