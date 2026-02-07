@@ -9,7 +9,7 @@ module RSpec
         module_function
 
         ANSI_SEQUENCE_REGEX = /\e\[[0-9;]*[a-zA-Z]/
-        VISIBLE_CHAR_GROUP_REGEX = /#{ANSI_SEQUENCE_REGEX}*[^\e]#{ANSI_SEQUENCE_REGEX}*|#{ANSI_SEQUENCE_REGEX}+/
+        VISIBLE_CHAR_GROUP_REGEX = /#{ANSI_SEQUENCE_REGEX}*[^\e]|#{ANSI_SEQUENCE_REGEX}+/
         COLOR_CODES = {
           # Reset
           reset: "0",
