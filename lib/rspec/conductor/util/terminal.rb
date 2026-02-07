@@ -13,8 +13,9 @@ module RSpec
 
           def initialize(terminal, content, truncate: true)
             @terminal = terminal
-            @content = content
             @truncate = truncate
+            yield self if block_given?
+            update(content)
           end
 
           def update(new_content)
@@ -25,23 +26,46 @@ module RSpec
           def to_s
             @content
           end
+
+          def lines
+            [self]
+          end
+        end
+
+        class Box
+          attr_reader :lines
+
+          def initialize(terminal)
+            @terminal = terminal
+            @lines = []
+            yield self if block_given?
+          end
+
+          def line(content = "", truncate: true)
+            Line.new(@terminal, content, truncate: truncate) { |l| @lines << l }
+          end
+
+          def puts(content = "")
+            Line.new(@terminal, content, truncate: false) { |l| @lines << l }
+          end
         end
 
         def initialize(output = $stdout, screen_buffer = ScreenBuffer.new(output))
           @output = output
           @screen_buffer = screen_buffer
-          @lines = []
+          @elements = []
         end
 
         def line(content = "", truncate: true)
-          Line.new(self, content, truncate: truncate).tap do |new_line|
-            @lines << new_line
-            redraw
-          end
+          Line.new(self, content, truncate: truncate) { |l| @elements << l }
         end
 
         def puts(content = "")
           line(content, truncate: false)
+        end
+
+        def box
+          Box.new(self) { |b| @elements << b }
         end
 
         def scroll_to_bottom
@@ -49,7 +73,7 @@ module RSpec
         end
 
         def redraw
-          screen_lines = @lines.flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
+          screen_lines = @elements.flat_map(&:lines).flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
           @screen_buffer.update(screen_lines)
         end
 

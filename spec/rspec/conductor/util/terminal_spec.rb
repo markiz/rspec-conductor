@@ -73,6 +73,18 @@ describe RSpec::Conductor::Util::Terminal do
     end
   end
 
+  describe "#box" do
+    it "supports a box with lines" do
+      box1 = terminal.box
+      box1.line "box1 line1"
+      box2 = terminal.box
+      box2.line "box2 line1"
+      box1.line "box1 line2"
+      box2.line "box2 line2"
+      expect(screen_buffer).to have_received(:update).with(["box1 line1", "box1 line2", "box2 line1", "box2 line2"])
+    end
+  end
+
   describe "#redraw" do
     it "calls screen_buffer#update" do
       terminal.redraw
