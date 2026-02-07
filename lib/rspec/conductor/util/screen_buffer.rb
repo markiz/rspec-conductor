@@ -17,6 +17,11 @@ module RSpec
         # Accepts new state as an array of strings.
         # Computes the minimal diff and writes ANSI escape sequences to @output.
         def update(new_lines)
+          unless @output.tty?
+            puts Array(new_lines).map { |line| visible_chars(line) }
+            return
+          end
+
           new_lines = Array(new_lines)
           ops = lines_diff(new_lines)
           unless ops.empty?
