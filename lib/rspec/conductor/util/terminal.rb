@@ -74,7 +74,7 @@ module RSpec
 
         def redraw
           screen_lines = @elements.flat_map(&:lines).flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
-          @screen_buffer.update(screen_lines)
+          @screen_buffer.update(screen_lines.take(tty_height(@output) - 1))
         end
 
         private
@@ -88,7 +88,11 @@ module RSpec
         def rewrap_to_tty_width(string)
           return string unless tty?
 
-          split_visible_char_groups(string).each_slice(tty_width(@output)).map(&:join)
+          string.split("\n").flat_map do |line|
+            _, indent, body = line.partition(/^\s*/)
+            max_width = tty_width(@output) - indent.size
+            split_visible_char_groups(body).each_slice(max_width).map { |chars| "#{indent}#{chars.join}" }
+          end
         end
 
         def tty?

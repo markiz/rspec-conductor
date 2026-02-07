@@ -117,6 +117,8 @@ module RSpec
         end
 
         def visible_chars(string)
+          return unless string
+
           string.gsub(ANSI_SEQUENCE_REGEX, '')
         end
 
@@ -124,6 +126,12 @@ module RSpec
           return 80 unless tty.tty?
 
           tty.winsize[1]
+        end
+
+        def tty_height(tty = $stdout)
+          return 50 unless tty.tty?
+
+          tty.winsize[0]
         end
       end
     end

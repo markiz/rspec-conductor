@@ -27,7 +27,7 @@ module RSpec
         end
 
         def scroll_to_bottom
-          @output.print move_cursor(@height, 0)
+          @output.print move_cursor(@height, 0, resize_height: false)
         end
 
         private
@@ -65,11 +65,15 @@ module RSpec
             # if our current screen buffer is shorter than the row we want to go to,
             # then we need to output new lines until we reach the right height
             buf << cursor_down([row - @cursor_row, @height - @cursor_row - 1].min)
-            buf << "\n" * [row - (@height - 1), 0].max
+            newlines = row - @height + 1
+            if newlines > 0
+              buf << "\n" * newlines
+              @cursor_col = 0
+            end
           end
 
-          buf << cursor_column(col + 1)
-          @height = [@height, row + 1].max
+          buf << cursor_column(col + 1) if @cursor_col != col
+          @height = [@height, row + 1].max if resize_height
           @cursor_row = row
           @cursor_col = col
           buf
