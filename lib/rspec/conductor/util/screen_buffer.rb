@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
-require_relative "../ansi"
-
 module RSpec
   module Conductor
     module Util
       class ScreenBuffer
-        include Conductor::ANSI
+        include Util::ANSI
 
         def initialize(output = $stdout)
           @output = output

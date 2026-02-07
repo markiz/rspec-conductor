@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
-require_relative "../ansi"
 require_relative "screen_buffer"
 
 module RSpec
   module Conductor
     module Util
       class Terminal
-        include Conductor::ANSI
+        include Util::ANSI
 
         class Line
           attr_reader :content, :truncate

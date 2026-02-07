@@ -2,7 +2,7 @@ module RSpec
   module Conductor
     module Formatters
       class Plain
-        include Conductor::ANSI
+        include Util::ANSI
 
         def handle_worker_message(_worker_process, message, _results)
           public_send(message[:type], message) if respond_to?(message[:type])
