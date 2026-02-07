@@ -5,6 +5,10 @@ require "spec_helper"
 describe RSpec::Conductor::Util::ScreenBuffer do
   let(:output) { StringIO.new }
   let(:screen_buffer) { described_class.new(output) }
+  before do
+    allow(output).to receive(:tty?).and_return(true)
+    allow(output).to receive(:winsize).and_return([80, 25])
+  end
 
   describe "#update" do
     it "accepts the new state and returns a string of chars and codes" do

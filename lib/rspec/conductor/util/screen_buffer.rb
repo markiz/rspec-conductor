@@ -18,7 +18,7 @@ module RSpec
         # Computes the minimal diff and writes ANSI escape sequences to @output.
         def update(new_lines)
           unless @output.tty?
-            puts Array(new_lines).map { |line| visible_chars(line) }
+            @output.puts Array(new_lines).map { |line| visible_chars(line) }
             return
           end
 

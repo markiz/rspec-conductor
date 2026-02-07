@@ -13,11 +13,11 @@ module RSpec
         class Line
           attr_reader :content, :truncate
 
-          def initialize(terminal, content, truncate: true)
+          def initialize(terminal, content, truncate: true, redraw: true)
             @terminal = terminal
             @truncate = truncate
             yield self if block_given?
-            update(content)
+            update(content, redraw: redraw)
           end
 
           def update(new_content, redraw: true)
@@ -41,12 +41,12 @@ module RSpec
             yield self if block_given?
           end
 
-          def line(content = "", truncate: true)
-            Line.new(@terminal, content, truncate: truncate) { |l| @contents << l }
+          def line(content = "", truncate: true, redraw: true)
+            Line.new(@terminal, content, truncate: truncate, redraw: redraw) { |l| @contents << l }
           end
 
-          def puts(content = "")
-            Line.new(@terminal, content, truncate: false) { |l| @contents << l }
+          def puts(content = "", redraw: true)
+            line(content, truncate: false, redraw: redraw)
           end
 
           def box
@@ -64,12 +64,12 @@ module RSpec
           @wrapper_box = Box.new(self)
         end
 
-        def line(content = "", truncate: true)
-          @wrapper_box.line(content, truncate: truncate)
+        def line(content = "", **kwargs)
+          @wrapper_box.line(content, **kwargs)
         end
 
-        def puts(content = "")
-          @wrapper_box.puts(content)
+        def puts(content = "", **kwargs)
+          @wrapper_box.puts(content, **kwargs)
         end
 
         def box
