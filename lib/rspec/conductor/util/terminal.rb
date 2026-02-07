@@ -33,39 +33,45 @@ module RSpec
         end
 
         class Box
-          attr_reader :lines
-
           def initialize(terminal)
             @terminal = terminal
-            @lines = []
+            @contents = []
             yield self if block_given?
           end
 
           def line(content = "", truncate: true)
-            Line.new(@terminal, content, truncate: truncate) { |l| @lines << l }
+            Line.new(@terminal, content, truncate: truncate) { |l| @contents << l }
           end
 
           def puts(content = "")
-            Line.new(@terminal, content, truncate: false) { |l| @lines << l }
+            Line.new(@terminal, content, truncate: false) { |l| @contents << l }
+          end
+
+          def box
+            Box.new(@terminal) { |b| @contents << b }
+          end
+
+          def lines
+            @contents.flat_map(&:lines)
           end
         end
 
         def initialize(output = $stdout, screen_buffer = ScreenBuffer.new(output))
           @output = output
           @screen_buffer = screen_buffer
-          @elements = []
+          @wrapper_box = Box.new(self)
         end
 
-        def line(content = "", truncate: true)
-          Line.new(self, content, truncate: truncate) { |l| @elements << l }
+        def line(*args, **kwargs, &block)
+          @wrapper_box.line(*args, **kwargs, &block)
         end
 
-        def puts(content = "")
-          line(content, truncate: false)
+        def puts(*args, **kwargs, &block)
+          @wrapper_box.puts(*args, **kwargs, &block)
         end
 
-        def box
-          Box.new(self) { |b| @elements << b }
+        def box(*args, **kwargs, &block)
+          @wrapper_box.box(*args, **kwargs, &block)
         end
 
         def scroll_to_bottom
@@ -73,7 +79,7 @@ module RSpec
         end
 
         def redraw
-          screen_lines = @elements.flat_map(&:lines).flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
+          screen_lines = @wrapper_box.lines.flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
           @screen_buffer.update(screen_lines.take(tty_height(@output) - 1))
         end
 
