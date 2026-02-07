@@ -21,14 +21,11 @@ module RSpec
         def update(new_lines)
           new_lines = Array(new_lines)
           ops = lines_diff(new_lines)
-
-          @lines = new_lines.map(&:dup)
           unless ops.empty?
             @output.print(ops)
             @output.flush
           end
-
-          ops
+          @lines = new_lines.dup
         end
 
         def scroll_to_bottom
@@ -55,7 +52,7 @@ module RSpec
             buf << changed_part.join
             buf << clear_line_forward if old_line_char_groups.size > new_line_char_groups.size
 
-            move_cursor(row, new_line_char_groups.size)
+            @cursor_col = new_line_char_groups.size
           end
 
           buf

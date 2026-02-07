@@ -28,9 +28,9 @@ module RSpec
           end
         end
 
-        def initialize(output = $stdout)
+        def initialize(output = $stdout, screen_buffer = ScreenBuffer.new(output))
           @output = output
-          @screen_buffer = ScreenBuffer.new(output)
+          @screen_buffer = screen_buffer
           @lines = []
         end
 
