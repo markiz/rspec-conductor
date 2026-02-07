@@ -24,7 +24,7 @@ describe "rspec-conductor executable" do
     output, status = Timeout.timeout(timeout) do
       Open3.capture2e(*cmd)
     end
-    { output: output, exit_code: status.exitstatus }
+    { output: output.encode("utf-8", invalid: :replace), exit_code: status.exitstatus }
   end
 
   SCENARIOS = [

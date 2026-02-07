@@ -5,27 +5,31 @@ require "spec_helper"
 describe RSpec::Conductor::Util::ScreenBuffer do
   let(:output) { StringIO.new }
   let(:screen_buffer) { described_class.new(output) }
+  before do
+    allow(output).to receive(:tty?).and_return(true)
+    allow(output).to receive(:winsize).and_return([80, 25])
+  end
 
   describe "#update" do
     it "accepts the new state and returns a string of chars and codes" do
       screen_buffer.update(["hello"])
-      expect(output.string).to eq("\e[1Ghello")
+      expect(output.string).to eq("hello")
     end
 
     it "allows multi-line updates" do
       screen_buffer.update(["hello", "world"])
-      expect(output.string).to eq("\e[1Ghello\n\e[1Gworld")
+      expect(output.string).to eq("hello\nworld")
     end
 
     it "allows changing existing outputs" do
       screen_buffer.update(["hello"])
       screen_buffer.update(["help"])
-      expect(output.string).to eq("\e[1Ghello\e[4Gp\e[K")
+      expect(output.string).to eq("hello\e[4Gp\e[K")
     end
 
     it "allows changing existing outputs in multi-line" do
       screen_buffer.update(["hello", "world", "third line"])
-      expect(output.string).to eq("\e[1Ghello\n\e[1Gworld\n\e[1Gthird line")
+      expect(output.string).to eq("hello\nworld\nthird line")
 
       output.rewind
       output.truncate(0)
@@ -47,7 +51,17 @@ describe RSpec::Conductor::Util::ScreenBuffer do
       output.truncate(0)
 
       screen_buffer.scroll_to_bottom
-      expect(output.string).to eq("\e[2B\n\e[1G")
+      expect(output.string).to eq("\e[2B\n")
+    end
+
+    it "avoids extending the buffer height when called multiple times" do
+      screen_buffer.update(["hello world"])
+      output.rewind
+      output.truncate(0)
+      screen_buffer.scroll_to_bottom
+      screen_buffer.scroll_to_bottom
+      screen_buffer.scroll_to_bottom
+      expect(output.string).to eq("\n")
     end
   end
 end

@@ -65,7 +65,7 @@ module RSpec
             worker_number = i + 1
             env_number = (first_is_1? || worker_number != 1) ? worker_number.to_s: ""
             line = terminal.line("#{worker_number}: starting...")
-            stderr_buffer = String.new(encoding: Encoding.default_external)
+            stderr_buffer = +""
 
             on_stdout = ->(text) do
               line.update("#{worker_number}: #{text}")

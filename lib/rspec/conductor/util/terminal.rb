@@ -8,40 +8,72 @@ module RSpec
       class Terminal
         include Util::ANSI
 
+        INDENTATION_REGEX = /^(\s+)(.*)$/
+
         class Line
           attr_reader :content, :truncate
 
-          def initialize(terminal, content, truncate: true)
+          def initialize(terminal, content, truncate: true, redraw: true)
             @terminal = terminal
-            @content = content
             @truncate = truncate
+            yield self if block_given?
+            update(content, redraw: redraw)
           end
 
-          def update(new_content)
+          def update(new_content, redraw: true)
             @content = new_content
-            @terminal.redraw
+            @terminal.redraw if redraw
           end
 
           def to_s
             @content
+          end
+
+          def lines
+            [self]
+          end
+        end
+
+        class Box
+          def initialize(terminal)
+            @terminal = terminal
+            @contents = []
+            yield self if block_given?
+          end
+
+          def line(content = "", truncate: true, redraw: true)
+            Line.new(@terminal, content, truncate: truncate, redraw: redraw) { |l| @contents << l }
+          end
+
+          def puts(content = "", redraw: true)
+            line(content, truncate: false, redraw: redraw)
+          end
+
+          def box
+            Box.new(@terminal) { |b| @contents << b }
+          end
+
+          def lines
+            @contents.flat_map(&:lines)
           end
         end
 
         def initialize(output = $stdout, screen_buffer = ScreenBuffer.new(output))
           @output = output
           @screen_buffer = screen_buffer
-          @lines = []
+          @wrapper_box = Box.new(self)
         end
 
-        def line(content = "", truncate: true)
-          Line.new(self, content, truncate: truncate).tap do |new_line|
-            @lines << new_line
-            redraw
-          end
+        def line(content = "", **kwargs)
+          @wrapper_box.line(content, **kwargs)
         end
 
-        def puts(content = "")
-          line(content, truncate: false)
+        def puts(content = "", **kwargs)
+          @wrapper_box.puts(content, **kwargs)
+        end
+
+        def box
+          @wrapper_box.box
         end
 
         def scroll_to_bottom
@@ -49,8 +81,8 @@ module RSpec
         end
 
         def redraw
-          screen_lines = @lines.flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
-          @screen_buffer.update(screen_lines)
+          screen_lines = @wrapper_box.lines.flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
+          @screen_buffer.update(screen_lines.take(tty_height(@output) - 1))
         end
 
         private
@@ -64,7 +96,11 @@ module RSpec
         def rewrap_to_tty_width(string)
           return string unless tty?
 
-          split_visible_char_groups(string).each_slice(tty_width(@output)).map(&:join)
+          string.split("\n").flat_map do |line|
+            indent, body = line.match(INDENTATION_REGEX)&.captures || ["", line]
+            max_width = tty_width(@output) - indent.size
+            split_visible_char_groups(body).each_slice(max_width).map { |chars| "#{indent}#{chars.join}" }
+          end
         end
 
         def tty?

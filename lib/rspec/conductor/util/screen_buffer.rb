@@ -17,6 +17,11 @@ module RSpec
         # Accepts new state as an array of strings.
         # Computes the minimal diff and writes ANSI escape sequences to @output.
         def update(new_lines)
+          unless @output.tty?
+            @output.puts Array(new_lines).map { |line| visible_chars(line) }
+            return
+          end
+
           new_lines = Array(new_lines)
           ops = lines_diff(new_lines)
           unless ops.empty?
@@ -27,13 +32,13 @@ module RSpec
         end
 
         def scroll_to_bottom
-          @output.print move_cursor(@height, 0)
+          @output.print move_cursor(@height, 0, resize_height: false)
         end
 
         private
 
         def lines_diff(new_lines)
-          buf = String.new(encoding: Encoding.default_external)
+          buf = +""
 
           [new_lines.length, @lines.length].max.times do |row|
             old_line = @lines[row] || ""
@@ -56,8 +61,8 @@ module RSpec
           buf
         end
 
-        def move_cursor(row, col)
-          buf = String.new(encoding: Encoding.default_external)
+        def move_cursor(row, col, resize_height: true)
+          buf = +""
 
           if row < @cursor_row
             buf << cursor_up(@cursor_row - row)
@@ -65,11 +70,15 @@ module RSpec
             # if our current screen buffer is shorter than the row we want to go to,
             # then we need to output new lines until we reach the right height
             buf << cursor_down([row - @cursor_row, @height - @cursor_row - 1].min)
-            buf << "\n" * [row - (@height - 1), 0].max
+            newlines = row - @height + 1
+            if newlines > 0
+              buf << "\n" * newlines
+              @cursor_col = 0
+            end
           end
 
-          buf << cursor_column(col + 1)
-          @height = [@height, row + 1].max
+          buf << cursor_column(col + 1) if @cursor_col != col
+          @height = [@height, row + 1].max if resize_height
           @cursor_row = row
           @cursor_col = col
           buf

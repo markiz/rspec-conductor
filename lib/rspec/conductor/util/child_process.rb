@@ -31,8 +31,8 @@ module RSpec
           @exit_status = nil
           @stdout_pipe = nil
           @stderr_pipe = nil
-          @stdout_buffer = String.new(encoding: Encoding.default_external)
-          @stderr_buffer = String.new(encoding: Encoding.default_external)
+          @stdout_buffer = +""
+          @stderr_buffer = +""
           @done = false
         end
 

@@ -59,9 +59,9 @@ describe RSpec::Conductor::Util::ANSI do
     describe "#split_visible_char_groups" do
       it "splits a string into visible characters, gluing the color codes to the nearest visible character", :aggregate_failures do
         # <red>h<bold,blue>e<green>llo =>
-        # <red>h<blue>, e<green>, l, l, o
+        # <red>h, <bold,blue>e, <green>l, l, o
         expect(described_class.split_visible_char_groups("\e[31m" + "h" + "\e[1;34m" + "e" + "\e[33m" + "llo"))
-          .to eq(["\e[31mh\e[1;34m", "e\e[33m", "l", "l", "o"])
+          .to eq(["\e[31mh", "\e[1;34me", "\e[33ml", "l", "o"])
 
         # empty string edgecase
         # <red><blue> =>
@@ -71,9 +71,9 @@ describe RSpec::Conductor::Util::ANSI do
 
         # multiple tailing codes edgecase
         # <red>h<blue><green>ello =>
-        # <red>h<blue><green>, e, l, l, o
+        # <red>h, <blue><green>e, l, l, o
         expect(described_class.split_visible_char_groups("\e[31m" + "h" + "\e[34m" + "\e[33m" + "ello"))
-          .to eq(["\e[31mh\e[34m\e[33m", "e", "l", "l", "o"])
+          .to eq(["\e[31mh", "\e[34m\e[33me", "l", "l", "o"])
 
         # multiple leading codes edgecase
         # <red><blue><green>hello =>
