@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 module RSpec
   module Conductor
     module Formatters
       class CI
-        include Conductor::ANSI
+        include Util::ANSI
 
         DEFAULT_PRINTOUT_INTERVAL = 10
 

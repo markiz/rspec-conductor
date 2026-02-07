@@ -1,26 +1,25 @@
 # frozen_string_literal: true
 
-require_relative "../ansi"
+require_relative "screen_buffer"
 
 module RSpec
   module Conductor
     module Util
       class Terminal
-        include Conductor::ANSI
+        include Util::ANSI
 
         class Line
-          attr_reader :cursor_y, :content, :truncate
+          attr_reader :content, :truncate
 
-          def initialize(terminal, content, cursor_y, truncate: true)
+          def initialize(terminal, content, truncate: true)
             @terminal = terminal
-            @cursor_y = cursor_y
             @content = content
             @truncate = truncate
           end
 
           def update(new_content)
             @content = new_content
-            @terminal.redraw_line(self)
+            @terminal.redraw
           end
 
           def to_s
@@ -28,85 +27,44 @@ module RSpec
           end
         end
 
-        def initialize(output = $stdout)
+        def initialize(output = $stdout, screen_buffer = ScreenBuffer.new(output))
           @output = output
+          @screen_buffer = screen_buffer
           @lines = []
-          @cursor_y = 0
-          @height = 0
+        end
+
+        def line(content = "", truncate: true)
+          Line.new(self, content, truncate: truncate).tap do |new_line|
+            @lines << new_line
+            redraw
+          end
         end
 
         def puts(content = "")
-          create_line(content, truncate: false)
-        end
-
-        def line(content = "")
-          create_line(content, truncate: true)
+          line(content, truncate: false)
         end
 
         def scroll_to_bottom
-          move_cursor_to(@height)
+          @screen_buffer.scroll_to_bottom
         end
 
         def redraw
-          @lines.each { |line| redraw_line(line) }
-        end
-
-        def redraw_line(line)
-          move_cursor_to(line.cursor_y)
-          render_line(line)
+          screen_lines = @lines.flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
+          @screen_buffer.update(screen_lines)
         end
 
         private
-
-        def create_line(content, truncate:)
-          Line.new(self, content.to_s, @height, truncate: truncate).tap do |line|
-            @height += truncate ? 1 : tty_lines_count(content)
-            @lines << line
-            redraw_line(line)
-          end
-        end
-
-        def render_line(line)
-          tty_puts line.content, truncate: line.truncate
-        end
-
-        def tty_puts(string, truncate: false)
-          string = truncate_to_tty_width(string) if truncate
-
-          @cursor_y += tty_lines_count(string)
-          @output.puts "#{clear_line}#{string}"
-          @output.flush unless tty?
-        end
-
-        # For non-tty terminals, we do not print the cursor-moving characters
-        # (otherwise the logs wouldn't be shown in the printout)
-        def move_cursor_to(cursor_y)
-          return unless tty?
-
-          if @cursor_y > cursor_y
-            @output.print cursor_up(@cursor_y - cursor_y)
-          else
-            @output.print cursor_down(cursor_y - @cursor_y)
-          end
-          @cursor_y = cursor_y
-        end
-
-        def tty_lines_count(string)
-          # e.g. tty width = 80
-          # a 0 char string is 1 line
-          # a 79 char string is 1 line
-          # a 80 char string is 1 line
-          # a 81 char string is 2 lines
-          length = visible_chars(string).length
-          return 1 if length == 0
-
-          ((length - 1) / tty_width(@output)) + 1
-        end
 
         def truncate_to_tty_width(string)
           return string unless tty?
 
           split_visible_char_groups(string).take(tty_width(@output)).join
+        end
+
+        def rewrap_to_tty_width(string)
+          return string unless tty?
+
+          split_visible_char_groups(string).each_slice(tty_width(@output)).map(&:join)
         end
 
         def tty?

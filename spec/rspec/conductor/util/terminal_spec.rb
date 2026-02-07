@@ -1,10 +1,19 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require "spec_helper"
 
 describe RSpec::Conductor::Util::Terminal do
   let(:output) { StringIO.new }
-  let(:terminal) { described_class.new(output) }
+  let(:tty) { true }
+  let(:tty_width) { 80 }
+  let(:tty_height) { 25 }
+  let(:screen_buffer) { spy("ScreenBuffer") }
+  let(:terminal) { described_class.new(output, screen_buffer) }
+
+  before do
+    allow(output).to receive(:tty?).and_return(tty)
+    allow(output).to receive(:winsize).and_return([tty_height, tty_width])
+  end
 
   describe "#puts" do
     it "creates a non-truncatable line" do
@@ -12,9 +21,26 @@ describe RSpec::Conductor::Util::Terminal do
       expect(line.truncate).to be false
     end
 
-    it "writes content to output" do
-      terminal.puts "hello world"
-      expect(output.string).to eq("\e[2K\rhello world\n")
+    it "writes content to the screen buffer" do
+      terminal.puts "hello"
+      expect(screen_buffer).to have_received(:update).with(["hello"])
+
+      terminal.puts "world"
+      expect(screen_buffer).to have_received(:update).with(["hello", "world"])
+    end
+
+    it "allows updating a line" do
+      line = terminal.puts "hello"
+      expect(screen_buffer).to have_received(:update).with(["hello"])
+      line.update("hello world")
+      expect(screen_buffer).to have_received(:update).with(["hello world"])
+    end
+
+    it "translates longer lines into multiple screen lines for the buffer" do
+      terminal.puts "A" * tty_width
+      expect(screen_buffer).to have_received(:update).with(["A" * tty_width])
+      terminal.puts "B" * (tty_width + 1)
+      expect(screen_buffer).to have_received(:update).with(["A" * tty_width, "B" * tty_width, "B"])
     end
   end
 
@@ -24,62 +50,40 @@ describe RSpec::Conductor::Util::Terminal do
       expect(line.truncate).to be true
     end
 
-    it "writes content to output" do
-      terminal.line "hello world"
-      expect(output.string).to eq("\e[2K\rhello world\n")
+    it "writes content to the screen buffer" do
+      terminal.line "hello"
+      expect(screen_buffer).to have_received(:update).with(["hello"])
+
+      terminal.line "world"
+      expect(screen_buffer).to have_received(:update).with(["hello", "world"])
     end
 
-    it "truncates content when output is a TTY" do
-      allow(terminal).to receive(:tty?).and_return(true)
-      allow(terminal).to receive(:tty_width).and_return(5)
-      terminal.line "hello world"
-      expect(output.string).to eq("\e[2K\rhello\n")
+    it "allows updating a line" do
+      line = terminal.line "hello"
+      expect(screen_buffer).to have_received(:update).with(["hello"])
+      line.update("hello world")
+      expect(screen_buffer).to have_received(:update).with(["hello world"])
     end
 
-    it "does not truncate content when output is not a TTY" do
-      allow(terminal).to receive(:tty?).and_return(false)
-      terminal.line "hello world"
-      expect(output.string).to eq("\e[2K\rhello world\n")
-    end
-  end
-
-  describe "Line#update" do
-    it "updates the line content" do
-      line = terminal.line "initial"
-      line.update "updated"
-      expect(line.to_s).to eq("updated")
-    end
-
-    it "outputs cursor movement and updated content" do
-      allow(terminal).to receive(:tty?).and_return(true)
-
-      line = terminal.line "initial"
-      line.update "updated"
-
-      # First: clear line + "initial\n", Second: cursor up 1 + clear + "updated\n"
-      expect(output.string).to eq("\e[2K\rinitial\n\e[1A\e[2K\rupdated\n")
+    it "truncates longer lines" do
+      terminal.line "A" * tty_width
+      expect(screen_buffer).to have_received(:update).with(["A" * tty_width])
+      terminal.line "B" * (tty_width + 1)
+      expect(screen_buffer).to have_received(:update).with(["A" * tty_width, "B" * tty_width])
     end
   end
 
-  describe "complex tests" do
-    it "updating lines after the initial print" do
-      allow(terminal).to receive(:tty?).and_return(true)
-      allow(terminal).to receive(:tty_width).and_return(10)
+  describe "#redraw" do
+    it "calls screen_buffer#update" do
+      terminal.redraw
+      expect(screen_buffer).to have_received(:update).with([])
+    end
+  end
 
-      line = terminal.puts "a" * 25  # 3 rows at cursor_y=0
-      terminal.line "second"         # at cursor_y=3
-
-      # Update: cursor up 4, clear, print short, newline
-      line.update "short"
-
-      # First: clear + 25 a's + newline
-      # Second: clear + "second" + newline
-      # Update: cursor up 4 + clear + "short" + newline
-      expect(output.string).to eq(
-        "\e[2K\raaaaaaaaaaaaaaaaaaaaaaaaa\n" \
-        "\e[2K\rsecond\n" \
-        "\e[4A\e[2K\rshort\n"
-      )
+  describe "#scroll_to_bottom" do
+    it "calls screen_buffer#scroll_to_bottom" do
+      terminal.scroll_to_bottom
+      expect(screen_buffer).to have_received(:scroll_to_bottom)
     end
   end
 end

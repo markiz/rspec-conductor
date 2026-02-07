@@ -5,7 +5,7 @@ module RSpec
   module Conductor
     module Formatters
       class Fancy
-        include Conductor::ANSI
+        include Util::ANSI
 
         def self.recommended?
           $stdout.tty? && $stdout.winsize[0] >= 30 && $stdout.winsize[1] >= 80

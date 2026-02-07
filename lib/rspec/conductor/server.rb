@@ -277,7 +277,7 @@ module RSpec
       end
 
       def colorize(string, color)
-        $stdout.tty? ? ANSI.colorize(string, color) : string
+        $stdout.tty? ? Util::ANSI.colorize(string, color) : string
       end
 
       def exit_with_status

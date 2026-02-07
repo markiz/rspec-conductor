@@ -39,7 +39,7 @@ describe RSpec::Conductor::Server do
     Timeout.timeout(10) do
       output = read_io.read
       _, status = Process.wait2(pid)
-      { exit_code: status.exitstatus, output: RSpec::Conductor::ANSI.visible_chars(output) }
+      { exit_code: status.exitstatus, output: RSpec::Conductor::Util::ANSI.visible_chars(output) }
     end
   ensure
     read_io&.close unless read_io&.closed?
