@@ -20,9 +20,9 @@ module RSpec
             update(content)
           end
 
-          def update(new_content)
+          def update(new_content, redraw: true)
             @content = new_content
-            @terminal.redraw
+            @terminal.redraw if redraw
           end
 
           def to_s

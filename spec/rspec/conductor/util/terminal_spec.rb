@@ -71,6 +71,14 @@ describe RSpec::Conductor::Util::Terminal do
       terminal.line "B" * (tty_width + 1)
       expect(screen_buffer).to have_received(:update).with(["A" * tty_width, "B" * tty_width])
     end
+
+    it "it supports no-redraw option" do
+      terminal.line "A", redraw: false
+      terminal.line "B", redraw: false
+      expect(screen_buffer).not_to have_received(:update)
+      terminal.redraw
+      expect(screen_buffer).to have_received(:update).with(["A", "B"])
+    end
   end
 
   describe "#box" do

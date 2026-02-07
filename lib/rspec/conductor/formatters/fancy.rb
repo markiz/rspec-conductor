@@ -57,12 +57,13 @@ module RSpec
           update_worker_status_line(worker_process)
           update_results_line(results)
           update_errors_line
+          @terminal.redraw
           @terminal.scroll_to_bottom
         end
 
         def dot(text, color)
           @dots_string << colorize(text, color)
-          @dots_line.update(@dots_string)
+          @dots_line.update(@dots_string, redraw: false)
         end
 
         def update_worker_status_line(worker_process)
@@ -77,7 +78,7 @@ module RSpec
                       "(idle)"
                     end
 
-          @worker_lines[worker_process.number].update(status)
+          @worker_lines[worker_process.number].update(status, redraw: false)
         end
 
         def update_results_line(results)
@@ -89,7 +90,7 @@ module RSpec
           percentage = " %3d%% (%d/%d)" % [(pct * 100).floor, results.spec_files_processed, results.spec_files_total]
           bar = colorize("[", :reset) + colorize("▓", :green) * filled + colorize(" ", :reset) * empty + colorize("]", :reset)
 
-          @progress_bar_line.update(bar + percentage)
+          @progress_bar_line.update(bar + percentage, redraw: false)
         end
 
         def update_errors_line
@@ -109,7 +110,7 @@ module RSpec
             @last_error[:backtrace].first(10).each { |l| error_components << "    #{l}" }
           end
 
-          @last_error_line.update(error_components.join("\n"))
+          @last_error_line.update(error_components.join("\n"), redraw: false)
         end
 
         def relative_path(filename)
