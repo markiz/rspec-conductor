@@ -33,7 +33,7 @@ module RSpec
         private
 
         def lines_diff(new_lines)
-          buf = String.new(encoding: Encoding.default_external)
+          buf = +""
 
           [new_lines.length, @lines.length].max.times do |row|
             old_line = @lines[row] || ""
@@ -56,8 +56,8 @@ module RSpec
           buf
         end
 
-        def move_cursor(row, col)
-          buf = String.new(encoding: Encoding.default_external)
+        def move_cursor(row, col, resize_height: true)
+          buf = +""
 
           if row < @cursor_row
             buf << cursor_up(@cursor_row - row)
