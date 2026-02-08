@@ -2,6 +2,6 @@
 
 module RSpec
   module Conductor
-    VERSION = "1.0.3"
+    VERSION = "1.0.4.pre"
   end
 end
