@@ -89,6 +89,13 @@ Short answer: it's unsafe. Any file descriptors, such as db connections, redis c
 
 ## Prior Art
 
+### File-based runners (split the load before the launch)
+
+* [parallel-tests](https://github.com/grosser/parallel_tests)
+* [flatware](https://github.com/briandunn/flatware)
+
+### Queue-based runners (feed workers from the queue)
+
 * [test-queue](https://github.com/tmm1/test-queue)
 * [rspecq](https://github.com/skroutz/rspecq/)
 * [ci-queue](https://github.com/Shopify/ci-queue/)
