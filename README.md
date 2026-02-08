@@ -37,7 +37,18 @@ Server process preloads the `rails_helper`, prepares a list of files to work, th
 
 ## Setting up the databases in Rails
 
-In order to bootstrap the test environment, there is a rake task:
+If you want ten workers, you're going to need ten databases. Something like this in your `database.yml` file:
+
+```yaml
+test:
+  primary:
+    <<: *default
+    database: database_test<%= ENV['TEST_ENV_NUMBER'] %>
+```
+
+That means worker number 3 is going to use database `database_test3`, worker number 4 `database_test4` and so on. Worker number 1 is special: with `--first-is-1` flag on it uses `TEST_ENV_NUMBER="1"`, but without it, it uses `TEST_ENV_NUMBER=""` (empty string).
+
+In order to bootstrap the test databases, there is a rake task:
 
 ```bash
 # Recreate and seed test databases with TEST_ENV_NUMBER 1 to 10
@@ -48,6 +59,12 @@ RSPEC_CONDUCTOR_FIRST_IS_1=1 rails rspec_conductor:setup[10]
 ```
 
 You can also set the env variable `RSPEC_CONDUCTOR_DEFAULT_WORKER_COUNT` to change the default worker count to avoid typing the quotes for the rake task arguments in zsh.
+
+```bash
+export RSPEC_CONDUCTOR_DEFAULT_WORKER_COUNT=10
+rails rspec_conductor:setup # assumes [10]
+
+```
 
 ## Development notes
 
