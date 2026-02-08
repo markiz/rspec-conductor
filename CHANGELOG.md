@@ -1,4 +1,11 @@
+## [1.0.3] - 2026-02-08
+
+- rake tasks for database preparation
+- some internal retooling for terminal ui inner machinery (mostly affecting the `fancy` formatter)
+
+
 ## [1.0.2] - 2026-01-09
+
 - Fix --postfork-require options
 - Fix worker crashes counter
 
