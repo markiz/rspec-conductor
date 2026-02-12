@@ -47,8 +47,8 @@ module RSpec
         def db_configs
           reload_database_configuration!
 
-          configs = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env)
-          raise ArgumentError, "could not find or parse configuration for the env #{Rails.env}" unless configs.any?
+          configs = ActiveRecord::Base.configurations.configs_for(env_name: ::Rails.env)
+          raise ArgumentError, "could not find or parse configuration for the env #{::Rails.env}" unless configs.any?
 
           configs
         end
@@ -103,15 +103,15 @@ module RSpec
         end
 
         def reload_database_configuration!
-          parsed_yaml = Rails.application.config.load_database_yaml
+          parsed_yaml = ::Rails.application.config.load_database_yaml
           raise ArgumentError, "could not find database yaml or the yaml is empty" if parsed_yaml.empty?
 
           ActiveRecord::Base.configurations = ActiveRecord::DatabaseConfigurations.new(parsed_yaml)
         end
 
         def schema_format_and_file
-          ruby_schema = File.join(Rails.root, "db", "schema.rb")
-          sql_schema = File.join(Rails.root, "db", "structure.sql")
+          ruby_schema = File.join(::Rails.root, "db", "schema.rb")
+          sql_schema = File.join(::Rails.root, "db", "structure.sql")
 
           if File.exist?(ruby_schema)
             [:ruby, ruby_schema]

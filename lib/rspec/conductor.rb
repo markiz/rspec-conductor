@@ -28,6 +28,6 @@ module RSpec
   end
 end
 
-if defined?(Rails)
+if defined?(::Rails)
   require_relative "conductor/railtie"
 end
