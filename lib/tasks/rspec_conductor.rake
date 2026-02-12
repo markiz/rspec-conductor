@@ -148,6 +148,11 @@ namespace :rspec_conductor do
     if ENV['RAILS_ENV']
       require_relative "../rspec/conductor/util/terminal"
       require_relative "../rspec/conductor/util/child_process"
+
+      unless defined?(Rails.root) && defined?(ActiveRecord::Tasks::DatabaseTasks)
+        warn 'rspec-conductor rake tasks need a working rails environment to work with the databases'
+        exit 1
+      end
     else
       system({ "RAILS_ENV" => "test" }, "rake", *Rake.application.top_level_tasks)
       exit
