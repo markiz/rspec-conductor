@@ -4,10 +4,6 @@ module RSpec
   module Conductor
     module DatabaseTasks
       class << self
-        def default_worker_count
-          ENV['RSPEC_CONDUCTOR_DEFAULT_WORKER_COUNT']&.to_i || 4
-        end
-
         def create_databases(count)
           run_for_each_database(count, "Creating") do
             db_configs.each { |config| ActiveRecord::Tasks::DatabaseTasks.create(config) }
@@ -41,7 +37,7 @@ module RSpec
         private
 
         def first_is_1?
-          ENV["RSPEC_CONDUCTOR_FIRST_IS_1"] == "1"
+          RSpec::Conductor.default_first_is_1?
         end
 
         def db_configs
@@ -127,21 +123,21 @@ module RSpec
 end
 
 namespace :rspec_conductor do
-  desc "Create parallel test databases (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
+  desc "Create parallel test databases (default: #{RSpec::Conductor.default_worker_count})"
   task :create, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
-    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
+    count = (args[:count] || RSpec::Conductor.default_worker_count).to_i
     RSpec::Conductor::DatabaseTasks.create_databases(count)
   end
 
-  desc "Drop parallel test databases (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
+  desc "Drop parallel test databases (default: #{RSpec::Conductor.default_worker_count})"
   task :drop, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
-    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
+    count = (args[:count] || RSpec::Conductor.default_worker_count).to_i
     RSpec::Conductor::DatabaseTasks.drop_databases(count)
   end
 
-  desc "Setup parallel test databases (drop + create + schema load + seed) (default: #{RSpec::Conductor::DatabaseTasks.default_worker_count})"
+  desc "Setup parallel test databases (drop + create + schema load + seed) (default: #{RSpec::Conductor.default_worker_count})"
   task :setup, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
-    count = (args[:count] || RSpec::Conductor::DatabaseTasks.default_worker_count).to_i
+    count = (args[:count] || RSpec::Conductor.default_worker_count).to_i
     RSpec::Conductor::DatabaseTasks.setup_databases(count)
   end
 

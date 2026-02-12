@@ -1,3 +1,8 @@
+## [1.0.4] - 2026-02-12
+
+- use Etc.nprocessors to determine the default worker count (reported by @coorasse)
+- use env vars (RSPEC_CONDUCTOR_DEFAULT_WORKER_COUNT, RSPEC_CONDUCTOR_FIRST_IS_1) more consistently between the rake task and the cli. Meaning, if you set these env vars, you should also see the corresponding change in the cli defaults
+
 ## [1.0.3] - 2026-02-08
 
 - rake tasks for database preparation
