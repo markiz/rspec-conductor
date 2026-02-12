@@ -17,7 +17,7 @@ describe RSpec::Conductor::Server do
     path
   end
 
-  def run_server(worker_count: 1, **opts)
+  def run_server(worker_count: 1, first_is_1: false, **opts)
     read_io, write_io = IO.pipe
 
     pid = fork do
@@ -27,6 +27,7 @@ describe RSpec::Conductor::Server do
 
       server = described_class.new(
         worker_count: worker_count,
+        first_is_1: first_is_1,
         rspec_args: [spec_dir],
         seed: 12345,
         **opts
