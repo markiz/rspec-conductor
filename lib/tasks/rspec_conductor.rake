@@ -6,13 +6,13 @@ module RSpec
       class << self
         def create_databases(count)
           run_for_each_database(count, "Creating") do
-            db_configs.each { |config| ActiveRecord::Tasks::DatabaseTasks.create(config) }
+            db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.create(config) }
           end
         end
 
         def drop_databases(count)
           run_for_each_database(count, "Dropping") do
-            db_configs.each { |config| ActiveRecord::Tasks::DatabaseTasks.drop(config) }
+            db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.drop(config) }
           end
         end
 
@@ -21,16 +21,16 @@ module RSpec
 
           run_for_each_database(count, "Setting up") do
             puts "Dropping database(s)"
-            db_configs.each { |config| ActiveRecord::Tasks::DatabaseTasks.drop(config) }
+            db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.drop(config) }
 
             puts "Creating database(s)"
-            db_configs.each { |config| ActiveRecord::Tasks::DatabaseTasks.create(config) }
+            db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.create(config) }
 
             puts "Loading schema"
-            db_configs.each { |config| ActiveRecord::Tasks::DatabaseTasks.load_schema(config, schema_format, schema_file) }
+            db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.load_schema(config, schema_format, schema_file) }
 
             puts "Loading seed"
-            ActiveRecord::Tasks::DatabaseTasks.load_seed
+            ::ActiveRecord::Tasks::DatabaseTasks.load_seed
           end
         end
 
@@ -43,7 +43,7 @@ module RSpec
         def db_configs
           reload_database_configuration!
 
-          configs = ActiveRecord::Base.configurations.configs_for(env_name: Rails.env)
+          configs = ::ActiveRecord::Base.configurations.configs_for(env_name: Rails.env)
           raise ArgumentError, "could not find or parse configuration for the env #{Rails.env}" unless configs.any?
 
           configs
@@ -54,7 +54,7 @@ module RSpec
 
           puts "#{action} #{count} test databases in parallel..."
           # Close connections before forking to avoid sharing file descriptors
-          ActiveRecord::Base.connection_pool.disconnect!
+          ::ActiveRecord::Base.connection_pool.disconnect!
 
           terminal = Conductor::Util::Terminal.new
           children = count.times.map do |i|
@@ -102,12 +102,12 @@ module RSpec
           parsed_yaml = Rails.application.config.load_database_yaml
           raise ArgumentError, "could not find database yaml or the yaml is empty" if parsed_yaml.empty?
 
-          ActiveRecord::Base.configurations = ActiveRecord::DatabaseConfigurations.new(parsed_yaml)
+          ::ActiveRecord::Base.configurations = ::ActiveRecord::DatabaseConfigurations.new(parsed_yaml)
         end
 
         def schema_format_and_file
-          ruby_schema = File.join(Rails.root, "db", "schema.rb")
-          sql_schema = File.join(Rails.root, "db", "structure.sql")
+          ruby_schema = File.join(::Rails.root, "db", "schema.rb")
+          sql_schema = File.join(::Rails.root, "db", "structure.sql")
 
           if File.exist?(ruby_schema)
             [:ruby, ruby_schema]
@@ -149,12 +149,12 @@ namespace :rspec_conductor do
       require_relative "../rspec/conductor/util/terminal"
       require_relative "../rspec/conductor/util/child_process"
 
-      unless defined?(Rails.root) && defined?(ActiveRecord::Tasks::DatabaseTasks)
+      unless defined?(::Rails.root) && defined?(::ActiveRecord::Tasks::DatabaseTasks)
         warn 'rspec-conductor rake tasks need a working rails environment to work with the databases'
         exit 1
       end
     else
-      system({ "RAILS_ENV" => "test" }, "rake", *Rake.application.top_level_tasks)
+      system({ "RAILS_ENV" => "test" }, "rake", *::Rake.application.top_level_tasks)
       exit
     end
   end

@@ -3,6 +3,7 @@
 - use Etc.nprocessors to determine the default worker count (reported by @coorasse)
 - use env vars (RSPEC_CONDUCTOR_DEFAULT_WORKER_COUNT, RSPEC_CONDUCTOR_FIRST_IS_1) more consistently between the rake task and the cli. Meaning, if you set these env vars, you should also see the corresponding change in the cli defaults
 - Fix some rake task issues in CI (reported by @cb341)
+- Fix namespace clash with RSpec::Rails in the rake task (reported by @cb341)
 
 ## [1.0.3] - 2026-02-08
 
