@@ -122,16 +122,22 @@ module RSpec
           string.gsub(ANSI_SEQUENCE_REGEX, '')
         end
 
-        def tty_width(tty = $stdout)
-          return 80 unless tty.tty?
+        def tty_width(io = $stdout)
+          return 80 unless io.tty?
 
-          tty.winsize[1]
+          width = io.winsize[1].to_i
+          return 40 if width < 40 # work around some badly behaved ci environments
+
+          width
         end
 
-        def tty_height(tty = $stdout)
-          return 50 unless tty.tty?
+        def tty_height(io = $stdout)
+          return 50 unless io.tty?
 
-          tty.winsize[0]
+          height = io.winsize[0].to_i
+          return 10 if height < 10 # work around some badly behaved ci environments
+
+          height
         end
       end
     end
