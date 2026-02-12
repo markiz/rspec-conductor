@@ -1,3 +1,7 @@
+## [1.0.5] - 2026-02-13
+
+- Missed one more place where unqualified `Rails` was still shadowed by `RSpec::Rails`
+
 ## [1.0.4] - 2026-02-12
 
 - use Etc.nprocessors to determine the default worker count (reported by @coorasse)
