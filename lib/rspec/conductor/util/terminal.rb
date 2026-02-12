@@ -82,7 +82,8 @@ module RSpec
 
         def redraw
           screen_lines = @wrapper_box.lines.flat_map { |line| line.truncate ? truncate_to_tty_width(line.content) : rewrap_to_tty_width(line.content) }
-          @screen_buffer.update(screen_lines.take(tty_height(@output) - 1))
+          max_lines = [tty_height(@output) - 1, 0].max
+          @screen_buffer.update(screen_lines.take(max_lines))
         end
 
         private
