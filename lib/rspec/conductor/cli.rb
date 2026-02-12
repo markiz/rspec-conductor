@@ -6,9 +6,9 @@ module RSpec
   module Conductor
     class CLI
       DEFAULTS = {
-        workers: 4,
+        workers: Conductor.default_worker_count,
         offset: 0,
-        first_is_1: false,
+        first_is_1: Conductor.default_first_is_1?,
         seed: nil,
         fail_fast_after: nil,
         verbose: false,

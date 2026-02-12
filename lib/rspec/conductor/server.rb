@@ -26,7 +26,7 @@ module RSpec
         @worker_number_offset = opts.fetch(:worker_number_offset, 0)
         @prefork_require = opts.fetch(:prefork_require, nil)
         @postfork_require = opts.fetch(:postfork_require, nil)
-        @first_is_one = opts.fetch(:first_is_1, false)
+        @first_is_1 = opts.fetch(:first_is_1, Conductor.default_first_is_1?)
         @seed = opts[:seed] || (Random.new_seed % MAX_SEED)
         @fail_fast_after = opts[:fail_fast_after]
         @display_retry_backtraces = opts.fetch(:display_retry_backtraces, false)
@@ -134,7 +134,7 @@ module RSpec
         pid = fork do
           parent_socket.close
 
-          ENV["TEST_ENV_NUMBER"] = if @first_is_one || worker_number != 1
+          ENV["TEST_ENV_NUMBER"] = if @first_is_1 || worker_number != 1
                                      worker_number.to_s
                                    else
                                      ""
