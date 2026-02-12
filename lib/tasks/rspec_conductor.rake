@@ -37,7 +37,7 @@ module RSpec
         private
 
         def first_is_1?
-          ENV["RSPEC_CONDUCTOR_FIRST_IS_1"] == "1"
+          RSpec::Conductor.default_first_is_1?
         end
 
         def db_configs

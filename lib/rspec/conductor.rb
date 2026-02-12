@@ -20,6 +20,10 @@ module RSpec
                                   Etc.nprocessors
                                 end
     end
+
+    def self.default_first_is_1?
+      ENV["RSPEC_CONDUCTOR_FIRST_IS_1"] == "1"
+    end
   end
 end
 
