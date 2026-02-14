@@ -74,6 +74,26 @@ describe "rspec-conductor executable" do
       expect_output: "1 passed, 0 failed, 0 pending"
     },
     {
+      name: "--tag rspec configuration option",
+      specs: {
+        "aaa_spec.rb" => 'RSpec.describe("AAA") { it("passes", :to_run) { expect(true).to be(true) } }',
+        "bbb_spec.rb" => 'RSpec.describe("BBB") { it("fails") { expect(true).to be(false) } }',
+      },
+      args: ["--", "--tag=to_run"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
+      name: "--tag rspec configuration option used to include certain tags",
+      specs: {
+        "aaa_spec.rb" => 'RSpec.describe("AAA") { it("passes") { expect(true).to be(true) } }',
+        "bbb_spec.rb" => 'RSpec.describe("BBB") { it("fails", :to_skip) { expect(true).to be(false) } }',
+      },
+      args: ["--", "--tag=~to_skip"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
       name: "mixed results",
       specs: {
         "pass_spec.rb" => 'RSpec.describe("Pass") { it("works") { expect(1).to eq(1) } }',
