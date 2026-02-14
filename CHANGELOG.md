@@ -1,3 +1,7 @@
+## [1.0.6] - 2026-02-14
+
+- Better RSpec arguments handling, for example, --pattern and --exclude-pattern should be supported better (reported by @cb341)
+
 ## [1.0.5] - 2026-02-13
 
 - Missed one more place where unqualified `Rails` was still shadowed by `RSpec::Rails`
