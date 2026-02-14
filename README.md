@@ -35,6 +35,23 @@ rspec-conductor --workers 10 spec
 
 Server process preloads the `rails_helper`, prepares a list of files to work, then spawns the workers, each with `ENV['TEST_ENV_NUMBER'] = <worker_number>` (same as parallel-tests). The two communicate over a standard unix socket. Message format is basically a tuple of `(size, json_payload)`. It should also be possible to run this process over the network, but I haven't found a solid usecase for this yet.
 
+## Formatters
+
+rspec-conductor comes with 3 formatters out of the box:
+
+* `--formatter plain` --- displays a bunch of dots, like rspec --format progress
+* `--formatter ci` --- displays current progress every 10 seconds, useful in CI environments if the output isn't flushed automatically for whatever reason, looks like this:
+```
+--------------------------------
+Current status [17:37:11]:
+Processed: 24 / 159 (15%)
+322 passed, 0 failed, 0 pending
+--------------------------------
+```
+* `--formatter fancy` --- that is the formatted shown in the gif above, it displays a list of workers, a row of dots and the last error message (if any). Useful for local development.
+
+When launched without an explicitly specified formatter option, rspec-conductor defaults to either `plain` or `fancy` depending on the terminal parameters.
+
 ## Setting up the databases in Rails
 
 If you want ten workers, you're going to need ten databases. Something like this in your `database.yml` file:
