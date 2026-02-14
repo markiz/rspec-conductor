@@ -106,12 +106,14 @@ module RSpec
 
       def run_spec(file)
         RSpec.world.reset
-        RSpec.configuration.reset_reporter
-        RSpec.configuration.files_or_directories_to_run = []
+        RSpec.configuration.reset
+        RSpec.configuration.files_or_directories_to_run = [file]
         RSpec.configuration.output_stream = null_io_out
         RSpec.configuration.error_stream = null_io_out
         RSpec.configuration.formatter_loader.formatters.clear
         RSpec.configuration.add_formatter(RSpecSubscriber.new(@socket, file, -> { check_for_shutdown }))
+        parsed_options.configure(RSpec.configuration)
+        RSpec.configuration.files_to_run # this seemingly random line is necessary for rspec to set up the inclusion filters (e.g. hello_spec.rb:123 -> the :123 part is an inclusion filter)
 
         begin
           debug "Loading spec file: #{file}"

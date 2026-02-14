@@ -20,11 +20,13 @@ describe "rspec-conductor executable" do
   end
 
   def run_conductor(*args, timeout: 10)
-    cmd = [exe_path, *args, spec_dir]
-    output, status = Timeout.timeout(timeout) do
-      Open3.capture2e(*cmd)
+    Dir.chdir(spec_dir) do
+      cmd = [exe_path, *args, '.']
+      output, status = Timeout.timeout(timeout) do
+        Open3.capture2e(*cmd)
+      end
+      { output: output.encode("utf-8", invalid: :replace), exit_code: status.exitstatus }
     end
-    { output: output.encode("utf-8", invalid: :replace), exit_code: status.exitstatus }
   end
 
   SCENARIOS = [
@@ -90,6 +92,15 @@ describe "rspec-conductor executable" do
         "bbb_spec.rb" => 'RSpec.describe("BBB") { it("fails", :to_skip) { expect(true).to be(false) } }',
       },
       args: ["--", "--tag=~to_skip"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
+      name: "inclusion filter using the colon symbol",
+      specs: {
+        "aaa_spec.rb" => "RSpec.describe do\nit('passes') { expect(true).to be(true) }\nit('fails') { expect(true).to be(false) }\nend",
+      },
+      args: ["aaa_spec.rb:2"],
       expect_exit: 0,
       expect_output: "1 passed, 0 failed, 0 pending"
     },
