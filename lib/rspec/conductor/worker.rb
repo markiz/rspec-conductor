@@ -60,7 +60,7 @@ module RSpec
       def setup_load_path
         parsed_options.configure(RSpec.configuration)
         @default_path = RSpec.configuration.default_path || "spec"
-        @default_full_path = File.expand_path(@default_path, Conductor.root)
+        @default_full_path = File.expand_path(@default_path)
 
         if Dir.exist?(@default_full_path) && !$LOAD_PATH.include?(@default_full_path)
           $LOAD_PATH.unshift(@default_full_path)

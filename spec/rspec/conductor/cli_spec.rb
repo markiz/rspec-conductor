@@ -15,12 +15,4 @@ describe RSpec::Conductor::CLI do
       expect(args[:rspec_args]).to include("spec/models", "--format", "documentation")
     end
   end
-
-  it "adds default spec path when none provided" do
-    described_class.run([])
-
-    expect(RSpec::Conductor::Server).to have_received(:new) do |args|
-      expect(args[:rspec_args].last).to end_with("spec/")
-    end
-  end
 end

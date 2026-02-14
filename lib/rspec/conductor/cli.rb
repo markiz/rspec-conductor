@@ -47,7 +47,6 @@ module RSpec
 
         parse_conductor_options(conductor_args)
         @rspec_args.prepend(*conductor_args) # can use spec paths as positional arguments before -- for convenience
-        apply_rspec_defaults
       end
 
       def parse_conductor_options(args)
@@ -107,11 +106,6 @@ module RSpec
             Kernel.exit
           end
         end.parse!(args)
-      end
-
-      def apply_rspec_defaults
-        has_paths = @rspec_args.any? { |arg| !arg.start_with?("-") }
-        @rspec_args << File.join(Conductor.root, "spec/") unless has_paths
       end
 
       def start_server

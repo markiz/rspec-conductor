@@ -46,6 +46,8 @@ module RSpec
                        (!@verbose && Formatters::Fancy.recommended?) ? Formatters::Fancy.new(worker_count: worker_count) : Formatters::Plain.new
                      end
         @results = Results.new
+
+        Dir.chdir(Conductor.root)
       end
 
       def run
@@ -73,7 +75,7 @@ module RSpec
           return
         end
 
-        preload = File.expand_path(@prefork_require, Conductor.root)
+        preload = File.expand_path(@prefork_require)
 
         if File.exist?(preload)
           debug "Preloading #{@prefork_require}..."
@@ -102,22 +104,17 @@ module RSpec
       end
 
       def build_spec_queue
-        paths = extract_paths_from_args
-
+        config_options = RSpec::Core::ConfigurationOptions.new(@rspec_args)
+        if config_options.options[:files_or_directories_to_run].empty?
+          config_options.options[:files_or_directories_to_run] = [File.join("spec/")]
+        end
         config = RSpec::Core::Configuration.new
-        config.files_or_directories_to_run = paths
-
+        debug "RSpec config options: #{config_options.inspect}"
+        config_options.configure(config)
+        debug "RSpec config: #{config.inspect}"
+        debug "Files to run: #{config.files_to_run}"
         @spec_queue = config.files_to_run.shuffle(random: Random.new(@seed))
         @results.spec_files_total = @spec_queue.size
-      end
-
-      def parsed_rspec_args
-        @parsed_rspec_args ||= RSpec::Core::ConfigurationOptions.new(@rspec_args)
-      end
-
-      def extract_paths_from_args
-        files = parsed_rspec_args.options[:files_or_directories_to_run] || []
-        files.empty? ? [File.join(Conductor.root, "spec/")] : files
       end
 
       def start_workers

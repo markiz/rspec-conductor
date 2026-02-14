@@ -54,6 +54,26 @@ describe "rspec-conductor executable" do
       expect_output: "3 passed, 0 failed, 0 pending"
     },
     {
+      name: "--pattern rspec configuration option",
+      specs: {
+        "aaa_spec.rb" => 'RSpec.describe("AAA") { it("passes") { expect(true).to be(true) } }',
+        "abb_spec.rb" => 'RSpec.describe("ABB") { it("fails") { expect(true).to be(false) } }',
+      },
+      args: ["--", "--pattern", "aa*_spec.rb"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
+      name: "--exclude-pattern rspec configuration option",
+      specs: {
+        "aaa_spec.rb" => 'RSpec.describe("AAA") { it("passes") { expect(true).to be(true) } }',
+        "abb_spec.rb" => 'RSpec.describe("ABB") { it("fails") { expect(true).to be(false) } }',
+      },
+      args: ["--", "--exclude-pattern", "ab*_spec.rb"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
       name: "mixed results",
       specs: {
         "pass_spec.rb" => 'RSpec.describe("Pass") { it("works") { expect(1).to eq(1) } }',
@@ -99,7 +119,7 @@ describe "rspec-conductor executable" do
   ].freeze
 
   SCENARIOS.each do |scenario|
-    it scenario[:name] do
+    it scenario[:name], :aggregate_failures do
       scenario[:specs].each { |name, content| create_spec_file(name, content) }
 
       result = run_conductor(*scenario[:args])
