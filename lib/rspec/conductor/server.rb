@@ -106,7 +106,7 @@ module RSpec
       def build_spec_queue
         config_options = RSpec::Core::ConfigurationOptions.new(@rspec_args)
         if config_options.options[:files_or_directories_to_run].empty?
-          config_options.options[:files_or_directories_to_run] = [File.join("spec/")]
+          config_options.options[:files_or_directories_to_run] = ["spec"]
         end
         config = RSpec::Core::Configuration.new
         debug "RSpec config options: #{config_options.inspect}"
