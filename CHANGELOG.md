@@ -1,6 +1,7 @@
 ## [1.0.6] - 2026-02-14
 
 - Better RSpec arguments handling, for example, --pattern and --exclude-pattern should be supported better (reported by @cb341)
+- Add support for RSpec path inclusion filters (e.g. spec/hello_spec.rb:123 or spec/hello_spec.rb[1:2:1])
 
 ## [1.0.5] - 2026-02-13
 
