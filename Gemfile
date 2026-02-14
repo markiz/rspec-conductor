@@ -11,3 +11,4 @@ else
   gem "rspec", "~> #{ENV["RSPEC_VERSION"]}"
 end
 gem "benchmark-ips"
+gem "irb"
