@@ -83,9 +83,11 @@ rails rspec_conductor:setup # assumes [10]
 
 ```
 
-## Development notes
+## Development philosophy
 
-* In order to make the CLI executable load and run fast, do not add any dependencies. That includes `active_support`.
+This library is very minimalistic by design. While there is a dependency on rspec-core, obviously, but there are no dependencies beyond that. Even the TUI stuff is handled internally.
+
+I will also try my best to keep supporting as many rubies / rspec versions as I can, which is, currently ruby 2.6.0+ (released in 2018) and rspec 3.8.0+ (also released in 2018), although that is more of a soft promise than a blood vow.
 
 ## Troubleshooting
 
