@@ -68,7 +68,7 @@ module RSpec
 
         def update_worker_status_line(worker_process)
           status = colorize("Worker #{worker_process.number}: ", :cyan)
-          status << if worker_process.status == :shut_down
+          status += if worker_process.status == :shut_down
                       "(finished)"
                     elsif worker_process.status == :terminated
                       colorize("(terminated)", :red)
