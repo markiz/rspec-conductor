@@ -95,6 +95,8 @@ I will also try my best to keep supporting as many rubies / rspec versions as I 
     * This is a common issue with ruby code, compiled libraries and forking. Set `OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES` environment variable to work around this
 * Something gets loaded that shouldn't get loaded, or in a different order
     * There are two simple ways to hook into preloads, exposed as CLI flags, `--prefork-require` (defaults to `config/application.rb`) and `--postfork-require` (defaults to either `rails_helper.rb` or `spec_helper.rb`, whichever is present on your machine). You can set any of those to whatever you need and control the load order
+* `--require` options are ignored in command-line arguments or my `.rspec`
+    * rspec-conductor uses the full rspec configuration machinery to parse all the params. That includes `.rspec`, which, by default, includes `--require spec_helper` or `--require rails_helper` in most setups. If you need tighter control over what you load, use either `--prefork-require` or `--postfork-require`, these are actual ruby files, you can put any code or any `require` you need there.
 
 ## FAQ
 

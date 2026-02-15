@@ -62,11 +62,17 @@ module RSpec
         @default_path = RSpec.configuration.default_path || "spec"
         @default_full_path = File.expand_path(@default_path)
 
-        if Dir.exist?(@default_full_path) && !$LOAD_PATH.include?(@default_full_path)
-          $LOAD_PATH.unshift(@default_full_path)
-        end
+        add_load_path(File.expand_path("lib"))
+        add_load_path(@default_full_path)
 
-        debug "Load path (spec dirs): #{$LOAD_PATH.inspect}"
+        debug "Load path: #{$LOAD_PATH.inspect}"
+      end
+
+      def add_load_path(path)
+        return unless File.directory?(path)
+        return if $LOAD_PATH.include?(path)
+
+        $LOAD_PATH.unshift(path)
       end
 
       def suppress_output
@@ -162,7 +168,7 @@ module RSpec
       end
 
       def parsed_options
-        @parsed_options ||= RSpec::Core::ConfigurationOptions.new(@rspec_args)
+        @parsed_options ||= RSpec::Core::ConfigurationOptions.new(@rspec_args).tap { |co| co.options.delete(:requires) }
       end
 
       def debug(message)
