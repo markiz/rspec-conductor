@@ -35,16 +35,17 @@ module RSpec
         @rspec_args = rspec_args
         @worker_processes = {}
         @spec_queue = []
-        @formatter = case opts[:formatter]
-                     when "ci"
-                       Formatters::CI.new
-                     when "fancy"
-                       Formatters::Fancy.new(worker_count: worker_count)
-                     when "plain"
-                       Formatters::Plain.new
-                     else
-                       (!@verbose && Formatters::Fancy.recommended?) ? Formatters::Fancy.new(worker_count: worker_count) : Formatters::Plain.new
-                     end
+        @formatter_class = case opts[:formatter]
+                           when "ci"
+                             Formatters::CI
+                           when "fancy"
+                             Formatters::Fancy
+                           when "plain"
+                             Formatters::Plain
+                           else
+                             (!@verbose && Formatters::Fancy.recommended?) ? Formatters::Fancy : Formatters::Plain
+                           end
+        @formatter = @formatter_class.new(worker_count: @worker_count)
         @results = Results.new
 
         Dir.chdir(Conductor.root)
@@ -56,14 +57,13 @@ module RSpec
         preload_application
 
         $stdout.sync = true
-        puts "RSpec Conductor starting with #{@worker_count} workers (seed: #{@seed})"
-        puts "Running #{@spec_queue.size} spec files\n\n"
+        @formatter.print_startup_banner(worker_count: @worker_count, seed: @seed, spec_files_count: @spec_queue.size)
 
         start_workers
         run_event_loop
         @results.suite_complete
 
-        print_summary
+        @formatter.print_summary(@results, seed: @seed)
         exit_with_status
       end
 
@@ -99,7 +99,7 @@ module RSpec
         return if @results.shutting_down?
 
         @results.shut_down
-        puts "Shutting down..."
+        @formatter.print_shut_down_banner
         @worker_processes.each_value { |w| w.socket&.send_message({ type: :shutdown }) }
       end
 
@@ -187,9 +187,7 @@ module RSpec
         when :example_pending
           @results.example_pending
         when :example_retried
-          if @display_retry_backtraces
-            puts "\nExample #{message[:description]} retried:\n  #{message[:location]}\n  #{message[:exception_class]}: #{message[:message]}\n#{message[:backtrace].map { "    #{_1}" }.join("\n")}\n"
-          end
+          @formatter.print_retry_message(message) if @display_retry_backtraces
         when :spec_complete
           @results.spec_file_complete
           worker_process.current_spec = nil
@@ -248,35 +246,6 @@ module RSpec
         nil
       end
 
-      def print_summary
-        puts "\n\n"
-        puts "Randomized with seed #{@seed}"
-        puts "#{colorize("#{@results.passed} passed", :green)}, #{colorize("#{@results.failed} failed", :red)}, #{colorize("#{@results.pending} pending", :yellow)}"
-        puts colorize("Worker crashes: #{@results.worker_crashes}", :red) if @results.worker_crashes.positive?
-
-        if @results.errors.any?
-          puts "\nFailures:\n\n"
-          @results.errors.each_with_index do |error, i|
-            puts "  #{i + 1}) #{error[:description]}"
-            puts "     #{error[:location]}"
-            puts "     #{error[:message]}" if error[:message]
-            if error[:backtrace]&.any?
-              puts "     Backtrace:"
-              error[:backtrace].each { |line| puts "       #{line}" }
-            end
-            puts
-          end
-        end
-
-        puts "Specs took: #{@results.specs_runtime.round(2)}s"
-        puts "Total runtime: #{@results.total_runtime.round(2)}s"
-        puts "Suite: #{@results.success? ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
-      end
-
-      def colorize(string, color)
-        $stdout.tty? ? Util::ANSI.colorize(string, color) : string
-      end
-
       def exit_with_status
         Kernel.exit(@results.success? ? 0 : 1)
       end
@@ -284,7 +253,7 @@ module RSpec
       def debug(message)
         return unless @verbose
 
-        $stderr.puts "[conductor] #{message}"
+        @formatter.print_debug("[conductor] #{message}")
       end
     end
   end

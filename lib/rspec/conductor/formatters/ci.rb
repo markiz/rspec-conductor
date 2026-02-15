@@ -3,15 +3,15 @@
 module RSpec
   module Conductor
     module Formatters
-      class CI
-        include Util::ANSI
-
+      class CI < Base
         DEFAULT_PRINTOUT_INTERVAL = 10
 
         # @option printout_interval how often a printout happens, in seconds
-        def initialize(printout_interval: DEFAULT_PRINTOUT_INTERVAL)
+        def initialize(printout_interval: DEFAULT_PRINTOUT_INTERVAL, **kwargs)
           @printout_interval = printout_interval
           @last_printout = Time.now
+
+          super(**kwargs)
         end
 
         def handle_worker_message(_worker_process, message, results)

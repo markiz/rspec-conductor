@@ -1,9 +1,7 @@
 module RSpec
   module Conductor
     module Formatters
-      class Plain
-        include Util::ANSI
-
+      class Plain < Base
         def handle_worker_message(_worker_process, message, _results)
           public_send(message[:type], message) if respond_to?(message[:type])
         end
@@ -27,11 +25,7 @@ module RSpec
         private
 
         def print(string, color)
-          if $stdout.tty?
-            $stdout.print(colorize(string, color))
-          else
-            $stdout.print(string)
-          end
+          $stdout.print(colorize(string, color))
         end
       end
     end

@@ -1,3 +1,7 @@
+## [1.0.7] - TBD
+
+- Move all output code into the formatter base class (lay some groundwork to address some minor issues with the fancy formatter)
+
 ## [1.0.6] - 2026-02-14
 
 - Better RSpec arguments handling, for example, --pattern and --exclude-pattern should be supported better (reported by @cb341)

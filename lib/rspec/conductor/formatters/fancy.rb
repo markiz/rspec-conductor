@@ -5,14 +5,12 @@ require "pathname"
 module RSpec
   module Conductor
     module Formatters
-      class Fancy
-        include Util::ANSI
-
+      class Fancy < Base
         def self.recommended?
           $stdout.tty? && $stdout.winsize[0] >= 30 && $stdout.winsize[1] >= 80
         end
 
-        def initialize(worker_count:)
+        def initialize(worker_count:, **kwargs)
           @worker_processes = {}
           @terminal = Util::Terminal.new
           @last_rendered_lines = []
@@ -27,6 +25,8 @@ module RSpec
           @dots_line = @terminal.line(truncate: false)
           @terminal.puts
           @last_error_line = @terminal.line(truncate: false)
+
+          super(**kwargs)
         end
 
         def handle_worker_message(worker_process, message, results)
@@ -68,7 +68,7 @@ module RSpec
 
         def update_worker_status_line(worker_process)
           status = colorize("Worker #{worker_process.number}: ", :cyan)
-          status << if worker_process.status == :shut_down
+          status += if worker_process.status == :shut_down
                       "(finished)"
                     elsif worker_process.status == :terminated
                       colorize("(terminated)", :red)
