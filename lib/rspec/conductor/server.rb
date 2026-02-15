@@ -105,6 +105,9 @@ module RSpec
 
       def build_spec_queue
         config_options = RSpec::Core::ConfigurationOptions.new(@rspec_args)
+        # a bit of a hack, but if they want to require something explicitly, they should use either --prefork-require or --postfork-require,
+        # as it is now, it messes with the preloads
+        config_options.options.delete(:requires)
         if config_options.options[:files_or_directories_to_run].empty?
           config_options.options[:files_or_directories_to_run] = ["spec"]
         end
