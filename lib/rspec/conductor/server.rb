@@ -49,6 +49,7 @@ module RSpec
         @results = Results.new
 
         Dir.chdir(Conductor.root)
+        ENV['PARALLEL_TEST_GROUPS'] = worker_count.to_s # parallel_tests backward-compatibility
       end
 
       def run
