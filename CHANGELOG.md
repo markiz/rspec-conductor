@@ -1,6 +1,7 @@
-## [1.0.7] - TBD
+## [1.0.7] - 2026-02-16
 
 - Move all output code into the formatter base class (lay some groundwork to address some minor issues with the fancy formatter)
+- Disable rspec's --require command line parameter. Use --prefork-require and --postfork-require in the rspec-conductor cli instead (reported by @cb341)
 
 ## [1.0.6] - 2026-02-14
 
