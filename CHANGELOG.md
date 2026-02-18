@@ -1,6 +1,7 @@
 ## [1.0.8] - 2026-02-18
 
 - When --postfork-require is provided, use current dir instead of spec/
+- Make sure before(:suite) hooks are actually called
 
 ## [1.0.7] - 2026-02-16
 
