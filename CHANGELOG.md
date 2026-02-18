@@ -1,3 +1,7 @@
+## [1.0.8] - 2026-02-18
+
+- When --postfork-require is provided, use current dir instead of spec/
+
 ## [1.0.7] - 2026-02-16
 
 - Move all output code into the formatter base class (lay some groundwork to address some minor issues with the fancy formatter)
