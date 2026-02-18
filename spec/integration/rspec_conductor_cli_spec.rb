@@ -146,6 +146,16 @@ describe "rspec-conductor executable" do
       args: ["-w", "1", "--formatter", "fancy"],
       expect_exit: 0,
       expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
+      name: "rspec before(:suite) hooks",
+      specs: {
+        "spec_helper.rb" => 'RSpec.configure { |c| c.before(:suite) { $before_suite_hook_ran = true } }',
+        "pass_spec.rb" => 'RSpec.describe("RSpec before suite hooks") { it("work") { expect($before_suite_hook_ran).to be(true) } }'
+      },
+      args: ["-w", "1", "--verbose", "--postfork-require", "spec_helper.rb"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
     }
   ].freeze
 
