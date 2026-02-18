@@ -95,7 +95,7 @@ module RSpec
             debug "Neither rails_helper, nor spec_helper found, skipping..."
           end
         elsif @postfork_require
-          required_file = File.expand_path(@postfork_require, @default_full_path)
+          required_file = File.expand_path(@postfork_require)
           if File.exist?(required_file)
             debug "Requiring #{required_file}..."
             require required_file
