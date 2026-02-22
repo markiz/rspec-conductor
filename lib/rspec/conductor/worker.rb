@@ -164,7 +164,7 @@ module RSpec
       end
 
       def debug(message)
-        @debug_io.puts "debug: #{message}" if @debug_io
+        @debug_io.puts message if @debug_io
       end
 
       def null_io_out
