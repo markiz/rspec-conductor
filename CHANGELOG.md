@@ -1,3 +1,7 @@
+## [1.0.9] - TBD
+
+- Handle workers stdout/stderr better. It is no longer necessary to use --verbose to see worker output. Verbose now only controls whether you see the debug output of the workers
+
 ## [1.0.8] - 2026-02-18
 
 - When --postfork-require is provided, use current dir instead of spec/
