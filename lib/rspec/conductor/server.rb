@@ -48,6 +48,7 @@ module RSpec
         @formatter = @formatter_class.new(worker_count: @worker_count)
         @results = Results.new
 
+        $stdin.echo = false if $stdin.tty?
         Dir.chdir(Conductor.root)
         ENV["PARALLEL_TEST_GROUPS"] = worker_count.to_s # parallel_tests backward-compatibility
       end
