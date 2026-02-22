@@ -51,6 +51,16 @@ module RSpec
           dot "*", :yellow
         end
 
+        def handle_worker_stdout(worker_number, string)
+          @stdout_line ||= @terminal.puts
+          @stdout_line.update("STDOUT: [worker #{worker_number}]: #{string}")
+        end
+
+        def handle_worker_stderr(worker_number, string)
+          @stderr_line ||= @terminal.puts
+          @stderr_line.update("STDERR: [worker #{worker_number}]: #{string}")
+        end
+
         private
 
         def redraw(worker_process, results)
