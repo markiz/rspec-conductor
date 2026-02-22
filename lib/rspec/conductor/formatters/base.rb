@@ -41,6 +41,16 @@ module RSpec
         puts "Suite: #{results.success? ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
       end
 
+      def handle_worker_stdout(worker_number, string, _verbose)
+        puts "[worker #{worker_number}] #{string}"
+      end
+
+      def handle_worker_stderr(worker_number, string, verbose)
+        return if !verbose && string.start_with?("debug")
+
+        $stderr.puts "[worker #{worker_number}] #{string}"
+      end
+
       def print_debug(string)
         $stderr.puts string
       end

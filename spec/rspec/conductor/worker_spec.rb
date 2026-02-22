@@ -36,7 +36,7 @@ describe RSpec::Conductor::Worker do
         worker_number: 1,
         socket: client_socket,
         rspec_args: [],
-        verbose: false
+        stderr: File.open(File::NULL, "w")
       ).run
     end
     client_io.close

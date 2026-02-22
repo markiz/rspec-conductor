@@ -1,9 +1,9 @@
 module RSpec
   module Conductor
-    WorkerProcess = Struct.new(:pid, :number, :status, :socket, :current_spec, keyword_init: true) do
-      def self.spawn(number:, test_env_number:, **worker_init_args)
+    WorkerProcess = Struct.new(:pid, :child_process, :number, :status, :socket, :current_spec, keyword_init: true) do
+      def self.spawn(number:, test_env_number:, on_stdout: nil, on_stderr: nil, **worker_init_args)
         parent_socket, child_socket = Socket.pair(:UNIX, :STREAM, 0)
-        pid = fork do
+        child_process = Util::ChildProcess.fork(on_stdout: on_stdout, on_stderr: on_stderr) do
           ENV["TEST_ENV_NUMBER"] = test_env_number
           parent_socket.close
           Worker.new(
@@ -14,7 +14,14 @@ module RSpec
         end
         child_socket.close
 
-        new(pid:, number:, status: :running, socket: Protocol::Socket.new(parent_socket), current_spec: nil)
+        new(
+          pid: child_process.pid,
+          child_process: child_process,
+          number: number,
+          status: :running,
+          socket: Protocol::Socket.new(parent_socket),
+          current_spec: nil
+        )
       end
 
       def hash

@@ -134,8 +134,9 @@ module RSpec
         worker_process = WorkerProcess.spawn(
           number: worker_number,
           test_env_number: (@first_is_1 || worker_number != 1) ? worker_number.to_s : "",
+          on_stdout: ->(string) { @formatter.handle_worker_stdout(worker_number, string, @verbose) },
+          on_stderr: ->(string) { @formatter.handle_worker_stderr(worker_number, string, @verbose) },
           rspec_args: @rspec_args,
-          verbose: @verbose,
           postfork_require: @postfork_require
         )
         debug "Worker #{worker_number} started with pid #{worker_process.pid}"
@@ -145,8 +146,9 @@ module RSpec
       def run_event_loop
         until @worker_processes.empty?
           worker_processes_by_io = @worker_processes.values.to_h { |w| [w.socket.io, w] }
-          readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, WORKER_POLL_INTERVAL)
+          readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, Util::ChildProcess::POLL_INTERVAL)
           readable_ios&.each { |io| handle_worker_message(worker_processes_by_io.fetch(io)) }
+          Util::ChildProcess.tick_all(@worker_processes.values.map(&:child_process))
           reap_workers
         end
       end
