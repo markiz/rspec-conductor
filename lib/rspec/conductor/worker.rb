@@ -5,12 +5,12 @@ require_relative 'ext/rspec'
 module RSpec
   module Conductor
     class Worker
-      def initialize(worker_number:, socket:, rspec_args: [], postfork_require: :spec_helper, stderr: $stderr)
+      def initialize(worker_number:, socket:, rspec_args: [], postfork_require: :spec_helper, debug_io: nil)
         @worker_number = worker_number
         @socket = socket
         @rspec_args = rspec_args
         @postfork_require = postfork_require
-        @stderr = stderr
+        @debug_io = debug_io
         @message_queue = []
       end
 
@@ -164,7 +164,7 @@ module RSpec
       end
 
       def debug(message)
-        @stderr.puts "debug: #{message}"
+        @debug_io.puts "debug: #{message}" if @debug_io
       end
 
       def null_io_out

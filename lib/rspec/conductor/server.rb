@@ -134,8 +134,8 @@ module RSpec
         worker_process = WorkerProcess.spawn(
           number: worker_number,
           test_env_number: (@first_is_1 || worker_number != 1) ? worker_number.to_s : "",
-          on_stdout: ->(string) { @formatter.handle_worker_stdout(worker_number, string, @verbose) },
-          on_stderr: ->(string) { @formatter.handle_worker_stderr(worker_number, string, @verbose) },
+          on_stdout: ->(string) { @formatter.handle_worker_stdout(worker_number, string) },
+          on_stderr: ->(string) { @formatter.handle_worker_stderr(worker_number, string) },
           rspec_args: @rspec_args,
           postfork_require: @postfork_require
         )
