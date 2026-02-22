@@ -49,7 +49,7 @@ module RSpec
         @results = Results.new
 
         Dir.chdir(Conductor.root)
-        ENV['PARALLEL_TEST_GROUPS'] = worker_count.to_s # parallel_tests backward-compatibility
+        ENV["PARALLEL_TEST_GROUPS"] = worker_count.to_s # parallel_tests backward-compatibility
       end
 
       def run
@@ -122,45 +122,24 @@ module RSpec
       end
 
       def start_workers
-        @worker_count.times do |i|
-          spawn_worker(@worker_number_offset + i + 1)
-        end
+        @worker_processes = @worker_count
+                               .times.map { |i| spawn_worker(@worker_number_offset + i + 1) }
+                               .to_h { |w| [w.pid, w] }
+        @worker_processes.values.each { |wp| assign_work(wp) }
       end
 
       def spawn_worker(worker_number)
-        parent_socket, child_socket = Socket.pair(:UNIX, :STREAM, 0)
-
         debug "Spawning worker #{worker_number}"
 
-        pid = fork do
-          parent_socket.close
-
-          ENV["TEST_ENV_NUMBER"] = if @first_is_1 || worker_number != 1
-                                     worker_number.to_s
-                                   else
-                                     ""
-                                   end
-
-          Worker.new(
-            worker_number: worker_number,
-            socket: Protocol::Socket.new(child_socket),
-            rspec_args: @rspec_args,
-            verbose: @verbose,
-            postfork_require: @postfork_require,
-          ).run
-        end
-
-        child_socket.close
-        debug "Worker #{worker_number} started with pid #{pid}"
-
-        @worker_processes[pid] = WorkerProcess.new(
-          pid: pid,
+        worker_process = WorkerProcess.spawn(
           number: worker_number,
-          status: :running,
-          socket: Protocol::Socket.new(parent_socket),
-          current_spec: nil,
+          test_env_number: (@first_is_1 || worker_number != 1) ? worker_number.to_s : "",
+          rspec_args: @rspec_args,
+          verbose: @verbose,
+          postfork_require: @postfork_require
         )
-        assign_work(@worker_processes[pid])
+        debug "Worker #{worker_number} started with pid #{worker_process.pid}"
+        worker_process
       end
 
       def run_event_loop
