@@ -24,6 +24,17 @@ module RSpec
         )
       end
 
+      def shut_down(status)
+        return unless running?
+
+        self.status = status
+        socket.close
+      end
+
+      def running?
+        status == :running
+      end
+
       def hash
         [number].hash
       end

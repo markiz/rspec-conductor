@@ -34,6 +34,7 @@ module RSpec
 
         @rspec_args = rspec_args
         @worker_processes = {}
+        @dead_worker_processes = []
         @spec_queue = []
         @formatter_class = case opts[:formatter]
                            when "ci"
@@ -63,6 +64,7 @@ module RSpec
 
         start_workers
         run_event_loop
+        wait_for_workers_to_exit
         @results.suite_complete
 
         @formatter.print_summary(@results, seed: @seed, success: success?)
@@ -74,7 +76,7 @@ module RSpec
       def setup_signal_handlers
         %w[INT TERM].each do |signal|
           Signal.trap(signal) do
-            @worker_processes.any? ? initiate_shutdown : Kernel.exit(1)
+            @worker_processes.values.any?(&:running?) ? initiate_shutdown : Kernel.exit(1)
           end
         end
       end
@@ -122,19 +124,26 @@ module RSpec
       end
 
       def run_event_loop
-        until @worker_processes.empty?
+        until @worker_processes.values.select(&:running?).empty?
           if @shutdown_status == :initiated_graceful
             @shutdown_status = :shutdown_messages_sent
             @formatter.print_shutdown_banner
-            @worker_processes.each_value { |w| w.socket.send_message({ type: :shutdown }) }
+            @worker_processes.values.select(&:running?).each do |worker_process|
+              worker_process.socket.send_message({ type: :shutdown })
+              cleanup_worker_process(worker_process)
+            end
           end
 
-          worker_processes_by_io = @worker_processes.values.to_h { |w| [w.socket.io, w] }
+          worker_processes_by_io = @worker_processes.values.select(&:running?).to_h { |w| [w.socket.io, w] }
           readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, Util::ChildProcess::POLL_INTERVAL)
           readable_ios&.each { |io| handle_worker_message(worker_processes_by_io.fetch(io)) }
           Util::ChildProcess.tick_all(@worker_processes.values.map(&:child_process))
           reap_workers
         end
+      end
+
+      def wait_for_workers_to_exit
+        Util::ChildProcess.wait_all(@worker_processes.values.map(&:child_process))
       end
 
       def spawn_worker(worker_number)
@@ -204,17 +213,14 @@ module RSpec
       end
 
       def cleanup_worker_process(worker_process, status: :shut_down)
-        @worker_processes.delete(worker_process.pid)
-        worker_process.socket.close
-        worker_process.status = status
+        worker_process.shut_down(status)
         @formatter.handle_worker_message(worker_process, { type: :worker_shut_down }, @results)
-        Process.wait(worker_process.pid)
-      rescue Errno::ECHILD
-        nil
       end
 
       def reap_workers
         dead_worker_processes = @worker_processes.each_with_object([]) do |(pid, worker), memo|
+          next unless worker.running?
+
           result = Process.waitpid(pid, Process::WNOHANG)
           memo << [worker, $CHILD_STATUS] if result
         end
@@ -235,9 +241,9 @@ module RSpec
       def initiate_shutdown
         if @shutdown_status.nil?
           @shutdown_status = :initiated_graceful
-        elsif @shutdown_status != :initiated_forced && @worker_processes.any?
+        elsif @shutdown_status != :initiated_forced && @worker_processes.any? { |_, w| w.running? }
           @shutdown_status = :initiated_forced
-          Process.kill(:TERM, *@worker_processes.values.map(&:pid))
+          Process.kill(:TERM, *@worker_processes.values.select(&:running?).map(&:pid))
         end
       end
 
