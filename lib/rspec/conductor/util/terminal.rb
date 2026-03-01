@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative "screen_buffer"
-
 module RSpec
   module Conductor
     module Util

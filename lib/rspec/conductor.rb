@@ -28,6 +28,7 @@ module RSpec
 end
 
 require_relative "conductor/util/ansi"
+require_relative "conductor/util/screen_buffer"
 require_relative "conductor/util/terminal"
 require_relative "conductor/util/child_process"
 require_relative "conductor/version"
@@ -42,6 +43,8 @@ require_relative "conductor/formatters/base"
 require_relative "conductor/formatters/plain"
 require_relative "conductor/formatters/ci"
 require_relative "conductor/formatters/fancy"
+
+require_relative "conductor/ext/rspec"
 
 if defined?(Rails)
   require_relative "conductor/railtie"

@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'ext/rspec'
-
 module RSpec
   module Conductor
     class Worker
