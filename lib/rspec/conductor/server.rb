@@ -123,8 +123,8 @@ module RSpec
 
       def run_event_loop
         until @worker_processes.empty?
-          if @shutdown_status == :initiated_graceful && !@shutdown_signals_sent
-            @shutdown_signals_sent = true
+          if @shutdown_status == :initiated_graceful
+            @shutdown_status = :shutdown_messages_sent
             @formatter.print_shut_down_banner
             @worker_processes.each_value { |w| w.socket.send_message({ type: :shutdown }) }
           end
