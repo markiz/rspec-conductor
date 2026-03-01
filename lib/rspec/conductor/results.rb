@@ -1,12 +1,12 @@
 module RSpec
   module Conductor
     class Results
-      attr_accessor :passed, :failed, :pending, :worker_crashes, :errors, :started_at, :spec_files_total, :spec_files_processed
+      attr_accessor :examples_passed, :examples_failed, :examples_pending, :worker_crashes, :errors, :started_at, :spec_files_total, :spec_files_processed
 
       def initialize
-        @passed = 0
-        @failed = 0
-        @pending = 0
+        @examples_passed = 0
+        @examples_failed = 0
+        @examples_pending = 0
         @worker_crashes = 0
         @errors = []
         @started_at = Time.now
@@ -17,20 +17,20 @@ module RSpec
       end
 
       def success?
-        @failed.zero? && @errors.empty? && @worker_crashes.zero? && @spec_files_total == @spec_files_processed
+        @examples_failed.zero? && @errors.empty? && @worker_crashes.zero? && @spec_files_total == @spec_files_processed
       end
 
       def example_passed
-        @passed += 1
+        @examples_passed += 1
       end
 
       def example_failed(message)
-        @failed += 1
+        @examples_failed += 1
         @errors << message
       end
 
       def example_pending
-        @pending += 1
+        @examples_pending += 1
       end
 
       def spec_file_assigned

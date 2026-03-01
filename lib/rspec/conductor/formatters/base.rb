@@ -19,7 +19,7 @@ module RSpec
       def print_summary(results, seed:)
         puts "\n\n"
         puts "Randomized with seed #{seed}"
-        puts "#{colorize("#{results.passed} passed", :green)}, #{colorize("#{results.failed} failed", :red)}, #{colorize("#{results.pending} pending", :yellow)}"
+        puts "#{colorize("#{results.examples_passed} passed", :green)}, #{colorize("#{results.examples_failed} failed", :red)}, #{colorize("#{results.examples_pending} pending", :yellow)}"
         puts colorize("Worker crashes: #{results.worker_crashes}", :red) if results.worker_crashes.positive?
 
         if results.errors.any?

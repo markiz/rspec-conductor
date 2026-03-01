@@ -165,8 +165,8 @@ module RSpec
         when :example_failed
           @results.example_failed(message)
 
-          if @fail_fast_after && @results.failed >= @fail_fast_after
-            debug "Shutting down after #{@results.failed} failures"
+          if @fail_fast_after && @results.examples_failed >= @fail_fast_after
+            debug "Shutting down after #{@results.examples_failed} failures"
             initiate_shutdown
           end
         when :example_pending
