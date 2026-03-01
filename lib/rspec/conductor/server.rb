@@ -182,9 +182,6 @@ module RSpec
           debug "Spec error details: #{message[:error]}"
           worker_process.current_spec = nil
           assign_work(worker_process)
-        when :spec_interrupted
-          debug "Spec interrupted: #{message[:file]}"
-          worker_process.current_spec = nil
         end
         @formatter.handle_worker_message(worker_process, message, @results)
       end
