@@ -121,12 +121,17 @@ module RSpec
         def finalize
           return if done?
 
+          @done = true
+
           process_buffer(@stdout_buffer, @on_stdout, drain: true)
           process_buffer(@stderr_buffer, @on_stderr, drain: true)
 
-          _, status = Process.wait2(@pid)
-          @exit_status = status.exitstatus
-          @done = true
+          begin
+            _, status = Process.waitpid2(@pid)
+            @exit_status = status.exitstatus
+          rescue Errno::ECHILD
+          end
+
           self
         end
 

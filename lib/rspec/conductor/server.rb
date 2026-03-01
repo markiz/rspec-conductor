@@ -217,8 +217,9 @@ module RSpec
 
       def reap_workers
         dead_worker_processes = @worker_processes.select(&:running?).each_with_object([]) do |worker_process, memo|
-          result = Process.waitpid(worker_process.pid, Process::WNOHANG)
-          memo << [worker_process, $CHILD_STATUS] if result
+          result, status = Process.waitpid2(worker_process.pid, Process::WNOHANG)
+          memo << [worker_process, status] if result
+        rescue Errno::ECHILD
         end
 
         dead_worker_processes.each do |worker_process, exitstatus|
@@ -226,8 +227,6 @@ module RSpec
           @results.worker_crashed
           debug "Worker #{worker_process.number} exited with status #{exitstatus.exitstatus}, signal #{exitstatus.termsig}"
         end
-      rescue Errno::ECHILD
-        nil
       end
 
       def shutting_down?
