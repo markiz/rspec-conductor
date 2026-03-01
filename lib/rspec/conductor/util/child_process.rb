@@ -123,8 +123,8 @@ module RSpec
 
           @done = true
 
-          process_buffer(@stdout_buffer, @on_stdout, drain: true)
-          process_buffer(@stderr_buffer, @on_stderr, drain: true)
+          process_buffer(@stdout_buffer, @on_stdout, drain_remaining: true)
+          process_buffer(@stderr_buffer, @on_stderr, drain_remaining: true)
 
           begin
             _, status = Process.waitpid2(@pid)
@@ -145,19 +145,17 @@ module RSpec
 
         private
 
-        def process_buffer(buffer, callback, drain: false)
-          if drain
-            unless buffer.empty?
-              callback&.call(buffer.chomp)
-              buffer.clear
-            end
-          else
-            while (newline_pos = buffer.index("\n"))
-              # String#slice! seems like it was invented specifically for this scenario,
-              # when you need to cut out a string fragment destructively
-              line = buffer.slice!(0..newline_pos).chomp
-              callback&.call(line)
-            end
+        def process_buffer(buffer, callback, drain_remaining: false)
+          while (newline_pos = buffer.index("\n"))
+            # String#slice! seems like it was invented specifically for this scenario,
+            # when you need to cut out a string fragment destructively
+            line = buffer.slice!(0..newline_pos).chomp
+            callback&.call(line)
+          end
+
+          if drain_remaining
+            callback&.call(buffer.chomp)
+            buffer.clear
           end
         end
       end
