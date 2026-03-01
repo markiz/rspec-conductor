@@ -63,7 +63,7 @@ module RSpec
         end
 
         def print_shut_down_banner
-          @shut_down_line.update("Shutting down...")
+          @shut_down_line.update("Shutting down... (press ctrl-c again to force quit)")
         end
 
         private

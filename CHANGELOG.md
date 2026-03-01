@@ -4,6 +4,7 @@
 - For the fancy formatter, allocate one line per stdout/stderr. Not ideal, but I'm not sure what layout I'm even looking for here, since allowing to freely put stuff into stdout/stderr breaks the TUI completely
 - Disable echo when running (also breaks the TUI). The side effect of this is that you probably lose ability to tactically use binding.irb in your specs, but you might want to drop into the regular rspec to do that anyway
 - Way better handling of SIGINT / Ctrl-C. Child processes used to just crash when terminated via signal, now they're safely terminating
+- Support double Ctrl-C to force-kill the workers (same as rspec)
 
 ## [1.0.8] - 2026-02-18
 

@@ -232,9 +232,12 @@ module RSpec
       end
 
       def initiate_shutdown
-        return if @results.shutting_down?
-
-        @results.initiate_shut_down
+        if @results.shutting_down? && !@force_shutdown_signals_sent && @worker_processes.any?
+          @force_shutdown_signals_sent = true
+          Process.kill(:TERM, *@worker_processes.values.map(&:pid))
+        elsif !@results.shutting_down?
+          @results.initiate_shut_down
+        end
       end
 
       def exit_with_status
