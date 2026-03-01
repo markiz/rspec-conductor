@@ -16,6 +16,7 @@ module RSpec
 
       def run
         debug "Worker #{@worker_number} starting"
+        setup_signal_handlers
         setup_load_path
         require_postfork_preloads
 
@@ -54,6 +55,10 @@ module RSpec
       end
 
       private
+
+      def setup_signal_handlers
+        %w[INT].each { |signal| Signal.trap(signal) { } }
+      end
 
       def setup_load_path
         parsed_options.configure(RSpec.configuration)

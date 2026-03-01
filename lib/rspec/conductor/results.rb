@@ -56,7 +56,7 @@ module RSpec
         @worker_crashes += 1
       end
 
-      def shut_down
+      def initiate_shut_down
         @shutting_down = true
       end
 

@@ -64,7 +64,7 @@ module RSpec
       end
 
       def print_shut_down_banner
-        puts "Shutting down..."
+        puts "Shutting down... (press ctrl-c again to force quit)"
       end
 
       def colorize(string, colors, **kwargs)
