@@ -61,6 +61,11 @@ module RSpec
           @stderr_line.update("STDERR: [worker #{worker_number}]: #{string}")
         end
 
+        def print_shut_down_banner
+          @shut_down_line ||= @terminal.puts
+          @shut_down_line.update("Shutting down...")
+        end
+
         private
 
         def redraw(worker_process, results)
