@@ -48,6 +48,7 @@ module RSpec
         @formatter = @formatter_class.new(worker_count: @worker_count)
         @results = Results.new
 
+        $stdout.sync = true
         $stdin.echo = false if $stdin.tty?
         Dir.chdir(Conductor.root)
         ENV["PARALLEL_TEST_GROUPS"] = worker_count.to_s # parallel_tests backward-compatibility
@@ -58,7 +59,6 @@ module RSpec
         build_spec_queue
         preload_application
 
-        $stdout.sync = true
         @formatter.print_startup_banner(worker_count: @worker_count, seed: @seed, spec_files_count: @spec_queue.size)
 
         start_workers
@@ -71,38 +71,12 @@ module RSpec
 
       private
 
-      def preload_application
-        if !@prefork_require
-          debug "Prefork require not set, skipping..."
-          return
-        end
-
-        preload = File.expand_path(@prefork_require)
-
-        if File.exist?(preload)
-          debug "Preloading #{@prefork_require}..."
-          require preload
-        else
-          debug "#{@prefork_require} not found, skipping..."
-        end
-
-        debug "Application preloaded, autoload paths configured"
-      end
-
       def setup_signal_handlers
         %w[INT TERM].each do |signal|
           Signal.trap(signal) do
             @worker_processes.any? ? initiate_shutdown : Kernel.exit(1)
           end
         end
-      end
-
-      def initiate_shutdown
-        return if @results.shutting_down?
-
-        @results.shut_down
-        @formatter.print_shut_down_banner
-        @worker_processes.each_value { |w| w.socket&.send_message({ type: :shutdown }) }
       end
 
       def build_spec_queue
@@ -122,11 +96,39 @@ module RSpec
         @results.spec_files_total = @spec_queue.size
       end
 
+      def preload_application
+        if !@prefork_require
+          debug "Prefork require not set, skipping..."
+          return
+        end
+
+        preload = File.expand_path(@prefork_require)
+
+        if File.exist?(preload)
+          debug "Preloading #{@prefork_require}..."
+          require preload
+        else
+          debug "#{@prefork_require} not found, skipping..."
+        end
+
+        debug "Application preloaded, autoload paths configured"
+      end
+
       def start_workers
         @worker_processes = @worker_count
                                .times.map { |i| spawn_worker(@worker_number_offset + i + 1) }
                                .to_h { |w| [w.pid, w] }
         @worker_processes.values.each { |wp| assign_work(wp) }
+      end
+
+      def run_event_loop
+        until @worker_processes.empty?
+          worker_processes_by_io = @worker_processes.values.to_h { |w| [w.socket.io, w] }
+          readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, Util::ChildProcess::POLL_INTERVAL)
+          readable_ios&.each { |io| handle_worker_message(worker_processes_by_io.fetch(io)) }
+          Util::ChildProcess.tick_all(@worker_processes.values.map(&:child_process))
+          reap_workers
+        end
       end
 
       def spawn_worker(worker_number)
@@ -143,16 +145,6 @@ module RSpec
         )
         debug "Worker #{worker_number} started with pid #{worker_process.pid}"
         worker_process
-      end
-
-      def run_event_loop
-        until @worker_processes.empty?
-          worker_processes_by_io = @worker_processes.values.to_h { |w| [w.socket.io, w] }
-          readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, Util::ChildProcess::POLL_INTERVAL)
-          readable_ios&.each { |io| handle_worker_message(worker_processes_by_io.fetch(io)) }
-          Util::ChildProcess.tick_all(@worker_processes.values.map(&:child_process))
-          reap_workers
-        end
       end
 
       def handle_worker_message(worker_process)
@@ -231,6 +223,14 @@ module RSpec
         end
       rescue Errno::ECHILD
         nil
+      end
+
+      def initiate_shutdown
+        return if @results.shutting_down?
+
+        @results.shut_down
+        @formatter.print_shut_down_banner
+        @worker_processes.each_value { |w| w.socket&.send_message({ type: :shutdown }) }
       end
 
       def exit_with_status
