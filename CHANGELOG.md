@@ -5,6 +5,7 @@
 - Disable echo when running (also breaks the TUI). The side effect of this is that you probably lose ability to tactically use binding.irb in your specs, but you might want to drop into the regular rspec to do that anyway
 - Way better handling of SIGINT / Ctrl-C. Child processes used to just crash when terminated via signal, now they're safely terminating
 - Support double Ctrl-C to force-kill the workers (same as rspec)
+- When there are spec failures, include a rerun command for failed examples (e.g. `rspec spec/some_spec.rb:28 spec/other_spec.rb:42`). It should also be possible to use rspec-conductor for those, but in my personal practice, I prefer rspec because I also want to have some interactive console during the spec run, which is not going to be possible with forked children
 
 ## [1.0.8] - 2026-02-18
 
