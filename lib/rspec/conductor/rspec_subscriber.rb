@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module RSpec
   module Conductor
     # Technically this is a **Formatter**, as in RSpec Formatter, but that was too confusing,

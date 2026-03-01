@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module RSpec
   module Conductor
     WorkerProcess = Struct.new(:pid, :child_process, :number, :status, :socket, :current_spec, keyword_init: true) do
