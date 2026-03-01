@@ -133,7 +133,7 @@ module RSpec
           end
 
           worker_processes_by_io = @worker_processes.select(&:running?).to_h { |w| [w.socket.io, w] }
-          readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, Util::ChildProcess::POLL_INTERVAL)
+          readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, 0)
           readable_ios&.each { |io| handle_worker_message(worker_processes_by_io.fetch(io)) }
           Util::ChildProcess.tick_all(@worker_processes.map(&:child_process))
           reap_workers
