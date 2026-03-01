@@ -11,9 +11,7 @@ module RSpec
         end
 
         def initialize(worker_count:, **kwargs)
-          @worker_processes = {}
           @terminal = Util::Terminal.new
-          @last_rendered_lines = []
           @dots_string = +""
           @last_error = nil
 
