@@ -30,7 +30,7 @@ module RSpec
           end
 
           def lines
-            [self]
+            @content ? [self] : []
           end
         end
 
