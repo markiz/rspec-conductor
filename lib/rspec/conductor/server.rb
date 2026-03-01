@@ -65,7 +65,7 @@ module RSpec
         run_event_loop
         @results.suite_complete
 
-        @formatter.print_summary(@results, seed: @seed, success: )
+        @formatter.print_summary(@results, seed: @seed, success: success?)
         exit_with_status
       end
 

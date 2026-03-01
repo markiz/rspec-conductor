@@ -16,7 +16,7 @@ module RSpec
         puts "Running #{spec_files_count} spec files\n\n"
       end
 
-      def print_summary(results, seed:)
+      def print_summary(results, seed:, success:)
         puts "\n\n"
         puts "Randomized with seed #{seed}"
         puts "#{colorize("#{results.examples_passed} passed", :green)}, #{colorize("#{results.examples_failed} failed", :red)}, #{colorize("#{results.examples_pending} pending", :yellow)}"
@@ -38,7 +38,7 @@ module RSpec
 
         puts "Specs took: #{results.specs_runtime.round(2)}s"
         puts "Total runtime: #{results.total_runtime.round(2)}s"
-        puts "Suite: #{results.success? ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
+        puts "Suite: #{success ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
       end
 
       def handle_worker_stdout(worker_number, string)
