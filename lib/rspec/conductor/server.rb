@@ -118,7 +118,7 @@ module RSpec
         @worker_processes = @worker_count
                                .times.map { |i| spawn_worker(@worker_number_offset + i + 1) }
                                .to_h { |w| [w.pid, w] }
-        @worker_processes.values.each { |wp| assign_work(wp) }
+        @worker_processes.each_value { |wp| assign_work(wp) }
       end
 
       def run_event_loop
