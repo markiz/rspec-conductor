@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # RSpec doesn't provide us with a good way to handle before/after suite hooks,
 # doing what we can here
 class RSpec::Core::Configuration

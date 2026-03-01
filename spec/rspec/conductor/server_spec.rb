@@ -39,7 +39,7 @@ describe RSpec::Conductor::Server do
 
     Timeout.timeout(10) do
       output = read_io.read
-      _, status = Process.wait2(pid)
+      _, status = Process.waitpid2(pid)
       { exit_code: status.exitstatus, output: RSpec::Conductor::Util::ANSI.visible_chars(output) }
     end
   ensure
@@ -130,7 +130,6 @@ describe RSpec::Conductor::Server do
       create_spec_file("env_#{i}_spec.rb", <<~RUBY)
         RSpec.describe "Env #{i}" do
           it "records TEST_ENV_NUMBER" do
-            sleep 0.05
             File.open("#{env_file}", "a") do |f|
               f.flock(File::LOCK_EX)
               f.puts ENV["TEST_ENV_NUMBER"].inspect
@@ -155,7 +154,6 @@ describe RSpec::Conductor::Server do
       create_spec_file("env_#{i}_spec.rb", <<~RUBY)
         RSpec.describe "Env #{i}" do
           it "records TEST_ENV_NUMBER" do
-            sleep 0.05
             File.open("#{env_file}", "a") do |f|
               f.flock(File::LOCK_EX)
               f.puts ENV["TEST_ENV_NUMBER"].inspect

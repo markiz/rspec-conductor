@@ -121,12 +121,17 @@ module RSpec
         def finalize
           return if done?
 
-          process_buffer(@stdout_buffer, @on_stdout, partial: true)
-          process_buffer(@stderr_buffer, @on_stderr, partial: true)
-
-          _, status = Process.wait2(@pid)
-          @exit_status = status.exitstatus
           @done = true
+
+          process_buffer(@stdout_buffer, @on_stdout, drain_remaining: true)
+          process_buffer(@stderr_buffer, @on_stderr, drain_remaining: true)
+
+          begin
+            _, status = Process.waitpid2(@pid)
+            @exit_status = status.exitstatus
+          rescue Errno::ECHILD
+          end
+
           self
         end
 
@@ -140,21 +145,17 @@ module RSpec
 
         private
 
-        def process_buffer(buffer, callback, partial: false)
-          return unless callback
+        def process_buffer(buffer, callback, drain_remaining: false)
+          while (newline_pos = buffer.index("\n"))
+            # String#slice! seems like it was invented specifically for this scenario,
+            # when you need to cut out a string fragment destructively
+            line = buffer.slice!(0..newline_pos).chomp
+            callback&.call(line)
+          end
 
-          if partial
-            unless buffer.empty?
-              callback.call(buffer.chomp)
-              buffer.clear
-            end
-          else
-            while (newline_pos = buffer.index("\n"))
-              # String#slice! seems like it was invented specifically for this scenario,
-              # when you need to cut out a string fragment destructively
-              line = buffer.slice!(0..newline_pos).chomp
-              callback.call(line)
-            end
+          if drain_remaining && !buffer.empty?
+            callback&.call(buffer.chomp)
+            buffer.clear
           end
         end
       end

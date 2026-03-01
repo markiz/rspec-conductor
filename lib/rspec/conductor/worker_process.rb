@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module RSpec
   module Conductor
     WorkerProcess = Struct.new(:pid, :child_process, :number, :status, :socket, :current_spec, keyword_init: true) do
@@ -22,6 +24,17 @@ module RSpec
           socket: Protocol::Socket.new(parent_socket),
           current_spec: nil
         )
+      end
+
+      def shut_down(status)
+        return unless running?
+
+        self.status = status
+        socket.close
+      end
+
+      def running?
+        status == :running
       end
 
       def hash
