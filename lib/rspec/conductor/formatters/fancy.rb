@@ -27,7 +27,7 @@ module RSpec
           @last_error_line = @terminal.line(truncate: false)
           @stdout_line = @terminal.puts nil
           @stderr_line = @terminal.puts nil
-          @shut_down_line = @terminal.puts nil
+          @shutdown_line = @terminal.puts nil
 
           super(**kwargs)
         end
@@ -62,8 +62,8 @@ module RSpec
           @stderr_line.update("STDERR: [worker #{worker_number}]: #{string}")
         end
 
-        def print_shut_down_banner
-          @shut_down_line.update("Shutting down... (press ctrl-c again to force quit)")
+        def print_shutdown_banner
+          @shutdown_line.update("Shutting down... (press ctrl-c again to force quit)")
         end
 
         private

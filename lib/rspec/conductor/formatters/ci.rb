@@ -26,7 +26,7 @@ module RSpec
           puts "-" * tty_width
           puts "Current status [#{Time.now.strftime("%H:%M:%S")}]:"
           puts "Processed: #{results.spec_files_processed} / #{results.spec_files_total} (#{(pct * 100).floor}%)"
-          puts "#{results.passed} passed, #{results.failed} failed, #{results.pending} pending"
+          puts "#{results.examples_passed} passed, #{results.examples_failed} failed, #{results.examples_pending} pending"
           if results.errors.any?
             puts "Failures:\n"
             results.errors.each_with_index do |error, i|
