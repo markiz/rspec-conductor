@@ -35,8 +35,7 @@ describe RSpec::Conductor::Worker do
       RSpec::Conductor::Worker.new(
         worker_number: 1,
         socket: client_socket,
-        rspec_args: [],
-        verbose: false
+        rspec_args: []
       ).run
     end
     client_io.close

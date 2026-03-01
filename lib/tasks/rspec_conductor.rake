@@ -49,7 +49,7 @@ module RSpec
           configs
         end
 
-        def run_for_each_database(count, action)
+        def run_for_each_database(count, action, &block)
           raise ArgumentError, "count must be positive" if count < 1
 
           puts "#{action} #{count} test databases in parallel..."

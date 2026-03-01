@@ -29,6 +29,7 @@ end
 
 require_relative "conductor/util/ansi"
 require_relative "conductor/util/terminal"
+require_relative "conductor/util/child_process"
 require_relative "conductor/version"
 require_relative "conductor/protocol"
 require_relative "conductor/server"

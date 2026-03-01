@@ -4,6 +4,8 @@ module RSpec
   module Conductor
     module Util
       class ChildProcess
+        POLL_INTERVAL = 0.01
+
         attr_reader :pid, :exit_status
 
         def self.fork(**args, &block)
@@ -12,16 +14,22 @@ module RSpec
 
         def self.wait_all(processes)
           until processes.all?(&:done?)
-            pipe_to_process = processes.each_with_object({}) do |process, memo|
-              process.pipes.reject(&:closed?).each { |pipe| memo[pipe] = process }
-            end
-            break if pipe_to_process.empty?
-
-            ready, = IO.select(pipe_to_process.keys, nil, nil, 0.1)
-            ready&.each { |pipe| pipe_to_process[pipe].read_available(pipe) }
+            break unless tick_all(processes)
           end
 
           processes.each(&:finalize)
+        end
+
+        def self.tick_all(processes, poll_interval: POLL_INTERVAL)
+          processes_by_io = processes.each_with_object({}) do |process, memo|
+            process.pipes.reject(&:closed?).each { |pipe| memo[pipe] = process }
+          end
+          return false if processes_by_io.empty?
+
+          ready, = IO.select(processes_by_io.keys, nil, nil, poll_interval)
+          ready&.each { |pipe| processes_by_io[pipe].read_available(pipe) }
+
+          true
         end
 
         def initialize(on_stdout: nil, on_stderr: nil)
@@ -59,7 +67,7 @@ module RSpec
             STDERR.reopen(stderr_write)
 
             begin
-              yield
+              yield self
             rescue => e
               stderr_write.puts "#{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"
               exit 1

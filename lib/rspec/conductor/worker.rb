@@ -5,18 +5,16 @@ require_relative 'ext/rspec'
 module RSpec
   module Conductor
     class Worker
-      def initialize(worker_number:, socket:, rspec_args: [], verbose: false, postfork_require: :spec_helper)
+      def initialize(worker_number:, socket:, rspec_args: [], postfork_require: :spec_helper, debug_io: nil)
         @worker_number = worker_number
         @socket = socket
         @rspec_args = rspec_args
-        @verbose = verbose
         @postfork_require = postfork_require
-
+        @debug_io = debug_io
         @message_queue = []
       end
 
       def run
-        suppress_output unless @verbose
         debug "Worker #{@worker_number} starting"
         setup_load_path
         require_postfork_preloads
@@ -73,12 +71,6 @@ module RSpec
         return if $LOAD_PATH.include?(path)
 
         $LOAD_PATH.unshift(path)
-      end
-
-      def suppress_output
-        $stdout.reopen(null_io_out)
-        $stderr.reopen(null_io_out)
-        $stdin.reopen(null_io_in)
       end
 
       def require_postfork_preloads
@@ -172,15 +164,11 @@ module RSpec
       end
 
       def debug(message)
-        $stderr.puts "[worker #{@worker_number}] #{message}"
+        @debug_io.puts message if @debug_io
       end
 
       def null_io_out
         @null_io_out ||= File.open(File::NULL, "w")
-      end
-
-      def null_io_in
-        @null_io_in ||= File.open(File::NULL, "r")
       end
     end
   end
