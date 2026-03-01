@@ -123,6 +123,12 @@ module RSpec
 
       def run_event_loop
         until @worker_processes.empty?
+          if @results.shutting_down? && !@shutdown_signals_sent
+            @shutdown_signals_sent = true
+            @formatter.print_shut_down_banner
+            @worker_processes.each_value { |w| w.socket&.send_message({ type: :shutdown }) }
+          end
+
           worker_processes_by_io = @worker_processes.values.to_h { |w| [w.socket.io, w] }
           readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, Util::ChildProcess::POLL_INTERVAL)
           readable_ios&.each { |io| handle_worker_message(worker_processes_by_io.fetch(io)) }
@@ -228,9 +234,7 @@ module RSpec
       def initiate_shutdown
         return if @results.shutting_down?
 
-        @results.shut_down
-        @formatter.print_shut_down_banner
-        @worker_processes.each_value { |w| w.socket&.send_message({ type: :shutdown }) }
+        @results.initiate_shut_down
       end
 
       def exit_with_status

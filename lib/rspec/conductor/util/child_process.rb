@@ -63,8 +63,10 @@ module RSpec
 
             $stdout = stdout_write
             $stderr = stderr_write
-            STDOUT.reopen(stdout_write)
-            STDERR.reopen(stderr_write)
+            $stdin = File.open("/dev/null")
+            STDOUT.reopen($stdout)
+            STDERR.reopen($stderr)
+            STDIN.reopen($stdin)
 
             begin
               yield self
