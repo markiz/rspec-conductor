@@ -130,7 +130,6 @@ describe RSpec::Conductor::Server do
       create_spec_file("env_#{i}_spec.rb", <<~RUBY)
         RSpec.describe "Env #{i}" do
           it "records TEST_ENV_NUMBER" do
-            sleep 0.05
             File.open("#{env_file}", "a") do |f|
               f.flock(File::LOCK_EX)
               f.puts ENV["TEST_ENV_NUMBER"].inspect
@@ -155,7 +154,6 @@ describe RSpec::Conductor::Server do
       create_spec_file("env_#{i}_spec.rb", <<~RUBY)
         RSpec.describe "Env #{i}" do
           it "records TEST_ENV_NUMBER" do
-            sleep 0.05
             File.open("#{env_file}", "a") do |f|
               f.flock(File::LOCK_EX)
               f.puts ENV["TEST_ENV_NUMBER"].inspect
