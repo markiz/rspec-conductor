@@ -1,4 +1,4 @@
-## [1.0.9] - TBD
+## [1.0.9] - 2026-03-01
 
 - Handle workers stdout/stderr better. It is no longer necessary to use --verbose to see worker output. Verbose now only controls whether you see the debug output of the workers
 - For the fancy formatter, allocate one line per stdout/stderr. Not ideal, but I'm not sure what layout I'm even looking for here, since allowing to freely put stuff into stdout/stderr breaks the TUI completely
