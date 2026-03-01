@@ -14,11 +14,10 @@ module RSpec
         @specs_completed_at = nil
         @spec_files_total = 0
         @spec_files_processed = 0
-        @shutting_down = false
       end
 
       def success?
-        @failed.zero? && @errors.empty? && @worker_crashes.zero? && !shutting_down?
+        @failed.zero? && @errors.empty? && @worker_crashes.zero? && @spec_files_total == @spec_files_processed
       end
 
       def example_passed
@@ -54,14 +53,6 @@ module RSpec
 
       def worker_crashed
         @worker_crashes += 1
-      end
-
-      def initiate_shut_down
-        @shutting_down = true
-      end
-
-      def shutting_down?
-        @shutting_down
       end
 
       def suite_complete

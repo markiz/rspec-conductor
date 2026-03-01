@@ -123,10 +123,10 @@ module RSpec
 
       def run_event_loop
         until @worker_processes.empty?
-          if @results.shutting_down? && !@shutdown_signals_sent
+          if @shutdown_status == :initiated_graceful && !@shutdown_signals_sent
             @shutdown_signals_sent = true
             @formatter.print_shut_down_banner
-            @worker_processes.each_value { |w| w.socket&.send_message({ type: :shutdown }) }
+            @worker_processes.each_value { |w| w.socket.send_message({ type: :shutdown }) }
           end
 
           worker_processes_by_io = @worker_processes.values.to_h { |w| [w.socket.io, w] }
@@ -192,7 +192,7 @@ module RSpec
       def assign_work(worker_process)
         spec_file = @spec_queue.shift
 
-        if @results.shutting_down? || !spec_file
+        if shutting_down? || !spec_file
           debug "No more work for worker #{worker_process.number}, sending shutdown"
           worker_process.socket.send_message({ type: :shutdown })
           cleanup_worker_process(worker_process)
@@ -231,12 +231,16 @@ module RSpec
         nil
       end
 
+      def shutting_down?
+        !@shutdown_status.nil?
+      end
+
       def initiate_shutdown
-        if @results.shutting_down? && !@force_shutdown_signals_sent && @worker_processes.any?
-          @force_shutdown_signals_sent = true
+        if @shutdown_status.nil?
+          @shutdown_status = :initiated_graceful
+        elsif @shutdown_status != :initiated_forced && @worker_processes.any?
+          @shutdown_status = :initiated_forced
           Process.kill(:TERM, *@worker_processes.values.map(&:pid))
-        elsif !@results.shutting_down?
-          @results.initiate_shut_down
         end
       end
 
