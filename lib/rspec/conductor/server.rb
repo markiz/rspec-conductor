@@ -65,7 +65,7 @@ module RSpec
         run_event_loop
         @results.suite_complete
 
-        @formatter.print_summary(@results, seed: @seed)
+        @formatter.print_summary(@results, seed: @seed, success: )
         exit_with_status
       end
 
@@ -125,7 +125,7 @@ module RSpec
         until @worker_processes.empty?
           if @shutdown_status == :initiated_graceful
             @shutdown_status = :shutdown_messages_sent
-            @formatter.print_shut_down_banner
+            @formatter.print_shutdown_banner
             @worker_processes.each_value { |w| w.socket.send_message({ type: :shutdown }) }
           end
 
@@ -244,8 +244,12 @@ module RSpec
         end
       end
 
+      def success?
+        @results.success? && !shutting_down?
+      end
+
       def exit_with_status
-        Kernel.exit(@results.success? ? 0 : 1)
+        Kernel.exit(success? ? 0 : 1)
       end
 
       def debug(message)

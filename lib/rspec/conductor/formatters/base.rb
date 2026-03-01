@@ -63,7 +63,7 @@ module RSpec
         EOM
       end
 
-      def print_shut_down_banner
+      def print_shutdown_banner
         puts "Shutting down... (press ctrl-c again to force quit)"
       end
 
