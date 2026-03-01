@@ -1,3 +1,5 @@
+## [1.0.10] - TBD
+
 ## [1.0.9] - 2026-03-01
 
 - Handle workers stdout/stderr better. It is no longer necessary to use --verbose to see worker output. Verbose now only controls whether you see the debug output of the workers
