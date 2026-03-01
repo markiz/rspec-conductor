@@ -57,7 +57,8 @@ module RSpec
       private
 
       def setup_signal_handlers
-        %w[INT].each { |signal| Signal.trap(signal) { } }
+        Signal.trap(:INT, :IGNORE)
+        Signal.trap(:TERM, :EXIT)
       end
 
       def setup_load_path
