@@ -153,7 +153,7 @@ module RSpec
             callback&.call(line)
           end
 
-          if drain_remaining
+          if drain_remaining && !buffer.empty?
             callback&.call(buffer.chomp)
             buffer.clear
           end
