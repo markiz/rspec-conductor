@@ -4,8 +4,8 @@ require "socket"
 
 module RSpec
   module Conductor
-    WorkerProcess = Struct.new(:pid, :child_process, :number, :status, :socket, :current_spec, keyword_init: true) do
-      def self.spawn(number:, test_env_number:, on_stdout: nil, on_stderr: nil, **worker_init_args)
+    WorkerProcess = Struct.new(:pid, :child_process, :number, :on_message, :status, :socket, :current_spec, keyword_init: true) do
+      def self.spawn(number:, test_env_number:, on_message:, on_stdout: nil, on_stderr: nil, **worker_init_args)
         parent_socket, child_socket = Socket.pair(:UNIX, :STREAM, 0)
         child_process = Util::ChildProcess.fork(on_stdout: on_stdout, on_stderr: on_stderr) do
           ENV["TEST_ENV_NUMBER"] = test_env_number
@@ -21,11 +21,30 @@ module RSpec
         new(
           pid: child_process.pid,
           child_process: child_process,
+          on_message: on_message,
           number: number,
           status: :running,
           socket: Protocol::Socket.new(parent_socket),
           current_spec: nil
         )
+      end
+
+      def self.tick_all(worker_processes)
+        worker_processes_by_io = worker_processes.select(&:running?).to_h { |w| [w.socket.io, w] }
+        readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, 0)
+        readable_ios&.each { |io| worker_processes_by_io.fetch(io).handle_message }
+        Util::ChildProcess.tick_all(worker_processes.map(&:child_process))
+      end
+
+      def self.wait_all(worker_processes)
+        Util::ChildProcess.wait_all(worker_processes.map(&:child_process))
+      end
+
+      def handle_message
+        message = receive_message
+        return unless message && on_message
+
+        on_message.call(self, message)
       end
 
       def send_message(message)

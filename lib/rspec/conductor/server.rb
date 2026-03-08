@@ -130,16 +130,13 @@ module RSpec
             end
           end
 
-          worker_processes_by_io = @worker_processes.select(&:running?).to_h { |w| [w.socket.io, w] }
-          readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, 0)
-          readable_ios&.each { |io| handle_worker_message(worker_processes_by_io.fetch(io)) }
-          Util::ChildProcess.tick_all(@worker_processes.map(&:child_process))
+          WorkerProcess.tick_all(@worker_processes)
           reap_workers
         end
       end
 
       def wait_for_workers_to_exit
-        Util::ChildProcess.wait_all(@worker_processes.map(&:child_process))
+        WorkerProcess.wait_all(@worker_processes)
       end
 
       def spawn_worker(worker_number)
@@ -148,6 +145,7 @@ module RSpec
         worker_process = WorkerProcess.spawn(
           number: worker_number,
           test_env_number: (@first_is_1 || worker_number != 1) ? worker_number.to_s : "",
+          on_message: ->(worker_process, message) { handle_worker_message(worker_process, message) },
           on_stdout: ->(string) { @formatter.handle_worker_stdout(worker_number, string) },
           on_stderr: ->(string) { @formatter.handle_worker_stderr(worker_number, string) },
           debug_io: @verbose ? $stderr : nil,
@@ -158,10 +156,7 @@ module RSpec
         worker_process
       end
 
-      def handle_worker_message(worker_process)
-        message = worker_process.receive_message
-        return unless message
-
+      def handle_worker_message(worker_process, message)
         debug "Worker #{worker_process.number}: #{message[:type]}"
 
         case message[:type].to_sym
