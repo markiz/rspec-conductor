@@ -34,7 +34,6 @@ module RSpec
 
         @rspec_args = rspec_args
         @worker_processes = []
-        @dead_worker_processes = []
         @spec_queue = []
         @formatter_class = case opts[:formatter]
                            when "ci"
