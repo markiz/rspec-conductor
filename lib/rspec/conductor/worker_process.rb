@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "socket"
+
 module RSpec
   module Conductor
     WorkerProcess = Struct.new(:pid, :child_process, :number, :status, :socket, :current_spec, keyword_init: true) do
@@ -24,6 +26,14 @@ module RSpec
           socket: Protocol::Socket.new(parent_socket),
           current_spec: nil
         )
+      end
+
+      def send_message(message)
+        socket.send_message(message)
+      end
+
+      def receive_message
+        socket.receive_message
       end
 
       def shut_down(status)

@@ -1,9 +1,5 @@
 # frozen_string_literal: true
 
-require "English"
-require "socket"
-require "json"
-
 module RSpec
   module Conductor
     class Server
@@ -129,7 +125,7 @@ module RSpec
             @shutdown_status = :shutdown_messages_sent
             @formatter.print_shutdown_banner
             @worker_processes.select(&:running?).each do |worker_process|
-              worker_process.socket.send_message({ type: :shutdown })
+              worker_process.send_message({ type: :shutdown })
               cleanup_worker_process(worker_process)
             end
           end
@@ -163,7 +159,7 @@ module RSpec
       end
 
       def handle_worker_message(worker_process)
-        message = worker_process.socket.receive_message
+        message = worker_process.receive_message
         return unless message
 
         debug "Worker #{worker_process.number}: #{message[:type]}"
@@ -200,14 +196,14 @@ module RSpec
 
         if shutting_down? || !spec_file
           debug "No more work for worker #{worker_process.number}, sending shutdown"
-          worker_process.socket.send_message({ type: :shutdown })
+          worker_process.send_message({ type: :shutdown })
           cleanup_worker_process(worker_process)
         else
           @suite_run.spec_file_assigned
           worker_process.current_spec = spec_file
           debug "Assigning #{spec_file} to worker #{worker_process.number}"
           message = { type: :worker_assigned_spec, file: spec_file }
-          worker_process.socket.send_message(message)
+          worker_process.send_message(message)
           @formatter.handle_worker_message(worker_process, message, @suite_run)
         end
       end
