@@ -48,6 +48,14 @@ module RSpec
           end
         end
 
+        def print_slowest(suite_run, n)
+          puts "\n\n"
+          puts "Slowest #{n} specs:"
+          suite_run.example_stats.sort_by { |e| -e[:run_time] }.take(n).each_with_index do |e, i|
+            puts "%3d. (%8.2fms) %s @ %s" % [i + 1, e[:run_time] * 1000, colorize(e[:description], :dim), colorize(e[:location], :cyan)]
+          end
+        end
+
         def handle_worker_stdout(worker_number, string)
           puts "[worker #{worker_number}] #{string}"
         end

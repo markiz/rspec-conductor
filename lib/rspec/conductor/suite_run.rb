@@ -3,7 +3,7 @@
 module RSpec
   module Conductor
     class SuiteRun
-      attr_accessor :examples_passed, :examples_failed, :examples_pending, :worker_crashes, :errors, :started_at, :spec_files_total, :spec_files_processed
+      attr_accessor :examples_passed, :examples_failed, :examples_pending, :worker_crashes, :errors, :started_at, :spec_files_total, :spec_files_processed, :example_stats
 
       def initialize
         @examples_passed = 0
@@ -16,17 +16,20 @@ module RSpec
         @specs_completed_at = nil
         @spec_files_total = 0
         @spec_files_processed = 0
+        @example_stats = []
       end
 
       def success?
         @examples_failed.zero? && @errors.empty? && @worker_crashes.zero? && @spec_files_total == @spec_files_processed
       end
 
-      def example_passed
+      def example_passed(message)
+        @example_stats << message.slice(:location, :run_time, :description)
         @examples_passed += 1
       end
 
       def example_failed(message)
+        @example_stats << message.slice(:location, :run_time, :description)
         @examples_failed += 1
         @errors << message
       end

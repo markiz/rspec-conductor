@@ -21,6 +21,7 @@ module RSpec
       # @option formatter [String] Use a certain formatter
       # @option verbose [Boolean] Use especially verbose output
       # @option display_retry_backtraces [Boolean] Display backtraces for specs retried via rspec-retry
+      # @option print_slowest_count [Integer] Print slowest specs in the end of the suite
       def initialize(worker_count:, rspec_args:, **opts)
         @worker_count = worker_count
         @worker_number_offset = opts.fetch(:worker_number_offset, 0)
@@ -30,6 +31,7 @@ module RSpec
         @seed = opts[:seed] || (Random.new_seed % MAX_SEED)
         @fail_fast_after = opts[:fail_fast_after]
         @display_retry_backtraces = opts.fetch(:display_retry_backtraces, false)
+        @print_slowest_count = opts.fetch(:print_slowest_count, nil)
         @verbose = opts.fetch(:verbose, false)
 
         @rspec_args = rspec_args
@@ -67,6 +69,7 @@ module RSpec
         @suite_run.suite_complete
 
         @formatter.print_summary(@suite_run, seed: @seed, success: success?)
+        @formatter.print_slowest(@suite_run, @print_slowest_count) if @print_slowest_count
         exit_with_status
       end
 
@@ -167,7 +170,7 @@ module RSpec
 
         case message[:type].to_sym
         when :example_passed
-          @suite_run.example_passed
+          @suite_run.example_passed(message)
         when :example_failed
           @suite_run.example_failed(message)
 

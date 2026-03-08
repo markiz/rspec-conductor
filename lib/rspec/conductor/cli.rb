@@ -15,6 +15,7 @@ module RSpec
         display_retry_backtraces: false,
         prefork_require: 'config/application.rb',
         postfork_require: :spec_helper,
+        print_slowest_count: nil,
       }.freeze
 
       def self.run(argv)
@@ -97,6 +98,10 @@ module RSpec
             @conductor_options[:display_retry_backtraces] = true
           end
 
+          opts.on("--print-slowest COUNT", Integer, "Print slowest specs with their execution times") do |n|
+            @conductor_options[:print_slowest_count] = n
+          end
+
           opts.on("--verbose", "Enable debug output") do
             @conductor_options[:verbose] = true
           end
@@ -120,6 +125,7 @@ module RSpec
           rspec_args: @rspec_args,
           formatter: @conductor_options[:formatter],
           display_retry_backtraces: @conductor_options[:display_retry_backtraces],
+          print_slowest_count: @conductor_options[:print_slowest_count],
           verbose: @conductor_options[:verbose],
         ).run
       end
