@@ -24,6 +24,10 @@ module RSpec
     def self.default_first_is_1?
       ENV["RSPEC_CONDUCTOR_FIRST_IS_1"] == "1"
     end
+
+    def self.register_post_suite_hook(&block)
+      Server.register_post_suite_hook(&block)
+    end
   end
 end
 
@@ -48,4 +52,15 @@ require_relative "conductor/ext/rspec"
 
 if defined?(Rails)
   require_relative "conductor/railtie"
+end
+
+# Auto-register SimpleCov result merging if SimpleCov is loaded
+if defined?(SimpleCov)
+  # Only register in parent process (workers have TEST_ENV_NUMBER set)
+  if ENV["TEST_ENV_NUMBER"].to_s.empty?
+    RSpec::Conductor.register_post_suite_hook do
+      result = SimpleCov::ResultMerger.merged_result
+      SimpleCov.process_result(result) if result
+    end
+  end
 end

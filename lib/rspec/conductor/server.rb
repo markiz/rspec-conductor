@@ -6,6 +6,15 @@ module RSpec
       MAX_SEED = 2**16
       WORKER_POLL_INTERVAL = 0.01
 
+      # Class-level hook registry for post-suite callbacks
+      def self.post_suite_hooks
+        @post_suite_hooks ||= []
+      end
+
+      def self.register_post_suite_hook(&block)
+        post_suite_hooks << block
+      end
+
       # @option worker_count [Integer] How many workers to spin
       # @option rspec_args [Array<String>] A list of rspec options
       # @option worker_number_offset [Integer] Start worker numbering with an offset
@@ -63,6 +72,9 @@ module RSpec
         run_event_loop
         wait_for_workers_to_exit
         @suite_run.suite_complete
+
+        # Call registered post-suite hooks
+        self.class.post_suite_hooks.each { |hook| hook.call }
 
         @formatter.print_summary(@suite_run, seed: @seed, success: success?)
         @formatter.print_slowest(@suite_run, @print_slowest_count) if @print_slowest_count
