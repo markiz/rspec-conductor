@@ -53,3 +53,14 @@ require_relative "conductor/ext/rspec"
 if defined?(Rails)
   require_relative "conductor/railtie"
 end
+
+# Auto-register SimpleCov result merging if SimpleCov is loaded
+if defined?(SimpleCov)
+  # Only register in parent process (workers have TEST_ENV_NUMBER set)
+  if ENV["TEST_ENV_NUMBER"].to_s.empty?
+    RSpec::Conductor.register_post_suite_hook do
+      result = SimpleCov::ResultMerger.merged_result
+      SimpleCov.process_result(result) if result
+    end
+  end
+end
