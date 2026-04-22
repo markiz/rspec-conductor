@@ -24,10 +24,6 @@ module RSpec
     def self.default_first_is_1?
       ENV["RSPEC_CONDUCTOR_FIRST_IS_1"] == "1"
     end
-
-    def self.register_post_suite_hook(&block)
-      Server.register_post_suite_hook(&block)
-    end
   end
 end
 
