@@ -4,7 +4,6 @@ module RSpec
   module Conductor
     class Server
       MAX_SEED = 2**16
-      WORKER_POLL_INTERVAL = 0.01
 
       # @option worker_count [Integer] How many workers to spin
       # @option rspec_args [Array<String>] A list of rspec options
