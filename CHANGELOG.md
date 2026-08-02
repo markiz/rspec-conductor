@@ -1,3 +1,5 @@
+## [1.0.12] - TBD
+
 ## [1.0.11] - 2026-08-03
 
 - Fix a bug in 2.x that would cause an exception because of the 3.x syntax usage (`_1`) in the formatter base
