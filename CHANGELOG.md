@@ -1,6 +1,7 @@
 ## [1.0.11] - TBD
 
 - Fix a bug in 2.x that would cause an exception because of the 3.x syntax usage (`_1`) in the formatter base
+- Remove a potential bottleneck when spec files run under 10ms on average
 
 ## [1.0.10] - 2026-03-08
 

@@ -1,38 +1,25 @@
 # frozen_string_literal: true
 
-require "socket"
-
 module RSpec
   module Conductor
-    WorkerProcess = Struct.new(:pid, :child_process, :number, :on_message, :status, :socket, :current_spec, keyword_init: true) do
+    class WorkerProcess
       def self.spawn(number:, test_env_number:, on_message:, on_stdout: nil, on_stderr: nil, **worker_init_args)
-        parent_socket, child_socket = Socket.pair(:UNIX, :STREAM, 0)
-        child_process = Util::ChildProcess.fork(on_stdout: on_stdout, on_stderr: on_stderr) do
+        worker_process = new(number: number, on_message: on_message)
+
+        child_process = Util::ChildProcess.fork(on_stdout: on_stdout, on_stderr: on_stderr, on_message: proc { worker_process.handle_message }) do |_, child_socket|
           ENV["TEST_ENV_NUMBER"] = test_env_number
-          parent_socket.close
           Worker.new(
             worker_number: number,
             socket: Protocol::Socket.new(child_socket),
             **worker_init_args
           ).run
         end
-        child_socket.close
 
-        new(
-          pid: child_process.pid,
-          child_process: child_process,
-          on_message: on_message,
-          number: number,
-          status: :running,
-          socket: Protocol::Socket.new(parent_socket),
-          current_spec: nil
-        )
+        worker_process.child_process = child_process
+        worker_process
       end
 
       def self.tick_all(worker_processes)
-        worker_processes_by_io = worker_processes.select(&:running?).to_h { |w| [w.socket.io, w] }
-        readable_ios, = IO.select(worker_processes_by_io.keys, nil, nil, 0)
-        readable_ios&.each { |io| worker_processes_by_io.fetch(io).handle_message }
         Util::ChildProcess.tick_all(worker_processes.map(&:child_process))
       end
 
@@ -40,11 +27,23 @@ module RSpec
         Util::ChildProcess.wait_all(worker_processes.map(&:child_process))
       end
 
+      attr_reader :number
+      attr_accessor :current_spec, :child_process, :status
+
+      def initialize(number:, on_message: nil)
+        @number = number
+        @on_message = on_message
+        @status = :running
+      end
+
       def handle_message
         message = receive_message
-        return unless message && on_message
+        unless message
+          socket.close
+          return
+        end
 
-        on_message.call(self, message)
+        @on_message&.call(self, message)
       end
 
       def send_message(message)
@@ -55,11 +54,18 @@ module RSpec
         socket.receive_message
       end
 
+      def socket
+        @socket ||= Protocol::Socket.new(child_process.message_socket)
+      end
+
+      def pid
+        child_process.pid
+      end
+
       def shut_down(status)
         return unless running?
 
-        self.status = status
-        socket.close
+        @status = status
       end
 
       def running?

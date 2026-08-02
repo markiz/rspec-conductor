@@ -48,8 +48,6 @@ module RSpec
         debug "Worker crashed: #{e.class}: #{e.message}"
         debug e.backtrace.join("\n")
         raise
-      ensure
-        @socket.close
       end
 
       private
