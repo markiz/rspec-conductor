@@ -2,6 +2,8 @@
 
 - Fix a bug in 2.x that would cause an exception because of the 3.x syntax usage (`_1`) in the formatter base
 - Remove a potential bottleneck when spec files run under 10ms on average
+- Fix performance issue with recalculating the file/location list over and over (which would coincidentally also take around 10ms for large directories)
+  - In other words, if you had a lot of super fast spec files, it will run them fast as well
 
 ## [1.0.10] - 2026-03-08
 
