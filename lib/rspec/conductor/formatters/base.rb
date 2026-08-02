@@ -74,7 +74,7 @@ module RSpec
               #{message[:location]}
               #{message[:exception_class]}: #{message[:message]}
               Backtrace:
-            #{message[:backtrace].map { "    #{_1}" }.join("\n")}
+            #{message[:backtrace].map { |line| "    #{line}" }.join("\n")}
           EOM
         end
 

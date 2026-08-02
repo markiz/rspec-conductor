@@ -108,6 +108,27 @@ describe RSpec::Conductor::Server do
     expect(result[:output]).to include("1 passed, 1 failed, 0 pending")
   end
 
+  it "stops assigning specs after the fail-fast threshold is reached" do
+    run_log = File.join(spec_dir, "run_log.txt")
+
+    3.times do |i|
+      create_spec_file("fail_#{i}_spec.rb", <<~RUBY)
+        RSpec.describe "Fail #{i}" do
+          it "fails" do
+            File.open("#{run_log}", "a") { |f| f.puts "#{i}" }
+            expect(1).to eq(2)
+          end
+        end
+      RUBY
+    end
+
+    result = run_server(fail_fast_after: 1)
+
+    expect(result[:exit_code]).to eq(1)
+    expect(result[:output]).to include("0 passed, 1 failed, 0 pending")
+    expect(File.readlines(run_log).size).to eq(1)
+  end
+
   it "tracks pending specs" do
     create_spec_file("pending_spec.rb", <<~RUBY)
       RSpec.describe "Pending" do

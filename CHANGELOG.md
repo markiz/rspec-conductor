@@ -1,5 +1,7 @@
 ## [1.0.11] - TBD
 
+- Fix a bug in 2.x that would cause an exception because of the 3.x syntax usage (`_1`) in the formatter base
+
 ## [1.0.10] - 2026-03-08
 
 - Add --print-slowest cli param to display the slowest specs in the suite
