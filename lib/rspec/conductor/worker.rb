@@ -48,8 +48,6 @@ module RSpec
         debug "Worker crashed: #{e.class}: #{e.message}"
         debug e.backtrace.join("\n")
         raise
-      ensure
-        @socket.close
       end
 
       private
@@ -109,12 +107,12 @@ module RSpec
       def run_spec(file)
         RSpec.world.reset
         RSpec.configuration.reset
-        RSpec.configuration.files_or_directories_to_run = [file]
         RSpec.configuration.output_stream = null_io_out
         RSpec.configuration.error_stream = null_io_out
         RSpec.configuration.formatter_loader.formatters.clear
         RSpec.configuration.add_formatter(RSpecSubscriber.new(@socket, file, -> { check_for_shutdown }))
         parsed_options.configure(RSpec.configuration)
+        RSpec.configuration.files_or_directories_to_run = location_entries_for(file)
         RSpec.configuration.files_to_run # this seemingly random line is necessary for rspec to set up the inclusion filters (e.g. hello_spec.rb:123 -> the :123 part is an inclusion filter)
 
         begin
@@ -133,7 +131,7 @@ module RSpec
 
           @socket.send_message(
             type: :spec_complete,
-            file: file
+            file: file,
           )
         rescue StandardError => e
           debug "Spec error: #{e.class}: #{e.message}"
@@ -165,6 +163,21 @@ module RSpec
 
       def parsed_options
         @parsed_options ||= RSpec::Core::ConfigurationOptions.new(@rspec_args).tap { |co| co.options.delete(:requires) }
+      end
+
+      # Returns all the location entries for a filename
+      # RSpec syntax for locations:
+      # * ./a_spec.rb - run whole file
+      # * ./a_spec.rb:18 - run specific spec
+      # * ./a_spec.rb[1:2:1] - run specific spec group
+      # You can specify locations more than once for a single file, so you need to find all relevant entries in the runner
+      def location_entries_for(filename)
+        filename = File.expand_path(filename)
+        entries = Array(parsed_options.options[:files_or_directories_to_run]).select do |entry|
+          entry_filename = File.expand_path(entry.sub(/(\[\d+(:\d+)*\])+\z/, "").sub(/(:\d+)+\z/, ""))
+          entry_filename == filename
+        end
+        entries.empty? ? filename : entries
       end
 
       def debug(message)

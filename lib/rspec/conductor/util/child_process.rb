@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
+require "socket"
+
 module RSpec
   module Conductor
     module Util
       class ChildProcess
         POLL_INTERVAL = 0.01
 
-        attr_reader :pid, :exit_status
+        attr_reader :pid, :message_socket, :exit_status, :ios
 
         def self.fork(**args, &block)
           new(**args).fork(&block)
@@ -22,30 +24,29 @@ module RSpec
 
         def self.tick_all(processes, poll_interval: POLL_INTERVAL)
           processes_by_io = processes.each_with_object({}) do |process, memo|
-            process.pipes.reject(&:closed?).each { |pipe| memo[pipe] = process }
+            process.ios.reject(&:closed?).each { |io| memo[io] = process }
           end
           return false if processes_by_io.empty?
 
           ready, = IO.select(processes_by_io.keys, nil, nil, poll_interval)
-          ready&.each { |pipe| processes_by_io[pipe].read_available(pipe) }
+          ready&.each { |io| processes_by_io[io].handle_available(io) }
 
           true
         end
 
-        def initialize(on_stdout: nil, on_stderr: nil)
+        def initialize(on_stdout: nil, on_stderr: nil, on_message: nil)
           @on_stdout = on_stdout
           @on_stderr = on_stderr
+          @on_message = on_message
           @pid = nil
           @exit_status = nil
           @stdout_pipe = nil
           @stderr_pipe = nil
           @stdout_buffer = +""
           @stderr_buffer = +""
+          @message_socket = nil
+          @ios = []
           @done = false
-        end
-
-        def pipes
-          [@stdout_pipe, @stderr_pipe].compact
         end
 
         def fork(&block)
@@ -53,13 +54,17 @@ module RSpec
 
           stdout_read, stdout_write = IO.pipe
           stderr_read, stderr_write = IO.pipe
+          parent_socket, child_socket = Socket.pair(:UNIX, :STREAM, 0) if @on_message
 
           @stdout_pipe = stdout_read
           @stderr_pipe = stderr_read
+          @message_socket = parent_socket
+          @ios = [@stdout_pipe, @stderr_pipe, @message_socket].compact
 
           @pid = Kernel.fork do
             stdout_read.close
             stderr_read.close
+            parent_socket&.close
 
             $stdout = stdout_write
             $stderr = stderr_write
@@ -69,13 +74,14 @@ module RSpec
             STDIN.reopen($stdin)
 
             begin
-              yield self
+              yield self, child_socket
             rescue => e
               stderr_write.puts "#{e.class}: #{e.message}\n#{e.backtrace.join("\n")}"
               exit 1
             ensure
               stdout_write.close
               stderr_write.close
+              child_socket&.close
             end
 
             exit 0
@@ -83,6 +89,7 @@ module RSpec
 
           stdout_write.close
           stderr_write.close
+          child_socket&.close
 
           self
         end
@@ -91,17 +98,27 @@ module RSpec
           @done
         end
 
-        def read_available(pipe)
+        def handle_available(io)
           return if done?
-          return if pipe.closed?
+          return if io.closed?
 
-          buffer, callback = if pipe == @stdout_pipe
-            [@stdout_buffer, @on_stdout]
-          elsif pipe == @stderr_pipe
-            [@stderr_buffer, @on_stderr]
-          else
-            return
+          case io
+          when @stdout_pipe, @stderr_pipe
+            read_pipe(io)
+          when @message_socket
+            @on_message&.call
           end
+        end
+
+        def read_pipe(pipe)
+          buffer, callback = case pipe
+                             when @stdout_pipe
+                               [@stdout_buffer, @on_stdout]
+                             when @stderr_pipe
+                               [@stderr_buffer, @on_stderr]
+                             else
+                               return
+                             end
 
           begin
             data = pipe.read_nonblock(4096, exception: false)
@@ -131,6 +148,8 @@ module RSpec
             @exit_status = status.exitstatus
           rescue Errno::ECHILD
           end
+
+          @message_socket&.close
 
           self
         end
