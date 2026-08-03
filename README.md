@@ -83,6 +83,27 @@ rails rspec_conductor:setup # assumes [10]
 
 ```
 
+## Code coverage with SimpleCov
+
+SimpleCov doesn't merge results across rspec-conductor workers automatically. Run this after `rspec-conductor` in CI:
+
+```sh
+bundle exec ruby -r simplecov -e "
+  result = SimpleCov::ResultMerger.merged_result
+  if result
+    result.format!
+    SimpleCov.process_result(result)
+  end
+"
+```
+
+Make sure to set a per-worker `command_name` before `SimpleCov.start`:
+
+```ruby
+SimpleCov.command_name "rspec#{ENV.fetch('TEST_ENV_NUMBER', '')}"
+SimpleCov.start 'rails'
+```
+
 ## Development philosophy
 
 This library is very minimalistic by design. While there is a dependency on rspec-core, obviously, but there are no dependencies beyond that. Even the TUI stuff is handled internally.
