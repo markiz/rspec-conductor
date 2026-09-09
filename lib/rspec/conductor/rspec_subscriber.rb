@@ -17,12 +17,14 @@ module RSpec
       end
 
       def example_passed(notification)
+        ex = notification.example
         @socket.send_message(
           type: :example_passed,
+          id: ex.id,
           file: @file,
-          description: notification.example.full_description,
-          location: notification.example.location,
-          run_time: notification.example.execution_result.run_time
+          description: ex.full_description,
+          location: ex.location,
+          run_time: ex.execution_result.run_time
         )
         @shutdown_check.call
       end
@@ -31,6 +33,7 @@ module RSpec
         ex = notification.example
         @socket.send_message(
           type: :example_failed,
+          id: ex.id,
           file: @file,
           description: ex.full_description,
           location: ex.location,

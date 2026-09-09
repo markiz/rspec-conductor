@@ -24,9 +24,10 @@ module RSpec
         @postfork_require = opts.fetch(:postfork_require, nil)
         @first_is_1 = opts.fetch(:first_is_1, Conductor.default_first_is_1?)
         @seed = opts[:seed] || (Random.new_seed % MAX_SEED)
-        @fail_fast_after = opts[:fail_fast_after]
+        @fail_fast_after = opts.fetch(:fail_fast_after, nil)
         @display_retry_backtraces = opts.fetch(:display_retry_backtraces, false)
         @print_slowest_count = opts.fetch(:print_slowest_count, nil)
+        @example_status_persistence_path = opts.fetch(:example_status_persistence_path, nil)
         @verbose = opts.fetch(:verbose, false)
 
         @rspec_args = rspec_args
@@ -65,6 +66,7 @@ module RSpec
 
         @formatter.print_summary(@suite_run, seed: @seed, success: success?)
         @formatter.print_slowest(@suite_run, @print_slowest_count) if @print_slowest_count
+        Conductor::ExampleStatusPersister.persist(@suite_run.example_stats, @example_status_persistence_path) if @example_status_persistence_path
         exit_with_status
       end
 
