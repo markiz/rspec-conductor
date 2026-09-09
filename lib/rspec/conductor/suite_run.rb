@@ -24,12 +24,12 @@ module RSpec
       end
 
       def example_passed(message)
-        @example_stats << message.slice(:location, :run_time, :description)
+        @example_stats << message.slice(:id, :location, :run_time, :description).merge(status: 'passed')
         @examples_passed += 1
       end
 
       def example_failed(message)
-        @example_stats << message.slice(:location, :run_time, :description)
+        @example_stats << message.slice(:id, :location, :run_time, :description).merge(status: 'failed')
         @examples_failed += 1
         @errors << message
       end

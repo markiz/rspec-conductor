@@ -24,6 +24,10 @@ module RSpec
     def self.default_first_is_1?
       ENV["RSPEC_CONDUCTOR_FIRST_IS_1"] == "1"
     end
+
+    def self.default_example_status_persistence_path
+      ENV["RSPEC_CONDUCTOR_EXAMPLE_STATUS_PERSISTENCE_PATH"]
+    end
   end
 end
 
@@ -43,6 +47,7 @@ require_relative "conductor/formatters/base"
 require_relative "conductor/formatters/plain"
 require_relative "conductor/formatters/ci"
 require_relative "conductor/formatters/fancy"
+require_relative "conductor/example_status_persister"
 
 require_relative "conductor/ext/rspec"
 

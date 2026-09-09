@@ -19,12 +19,13 @@ describe "rspec-conductor executable" do
     path
   end
 
-  def run_conductor(*args, timeout: 10)
+  def run_conductor(args:, timeout: 10, &block)
     Dir.chdir(spec_dir) do
       cmd = [exe_path, *args, '.']
       output, status = Timeout.timeout(timeout) do
         Open3.capture2e(*cmd)
       end
+      instance_exec(&block) if block
       { output: output.encode("utf-8", invalid: :replace), exit_code: status.exitstatus }
     end
   end
@@ -166,13 +167,26 @@ describe "rspec-conductor executable" do
       expect_exit: 1,
       expect_output: ["Slowest 10 specs", "test --print-slowest works", "a_spec.rb:2", "test --print-slowest fails", "a_spec.rb:3"]
     },
+    {
+      name: "--example-status-persistence",
+      specs: {
+        "a_spec.rb" => "RSpec.describe('test --print-slowest') {\n it('works') { expect(true).to be(true) }\n }",
+      },
+      args: ["--example-status-persistence", ".example_statuses"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending",
+      expect_proc: proc do
+        expect(File.exist?(".example_statuses")).to be true
+        expect(File.readlines(".example_statuses").detect { |line| line.include?('passed') }).not_to be_nil
+      end
+    }
   ].freeze
 
   SCENARIOS.each do |scenario|
     it scenario[:name], :aggregate_failures do
       scenario[:specs].each { |name, content| create_spec_file(name, content) }
 
-      result = run_conductor(*scenario[:args])
+      result = run_conductor(args: scenario[:args], &scenario[:expect_proc])
 
       expect(result[:exit_code]).to eq(scenario[:expect_exit])
       Array(scenario[:expect_output]).each do |expected_output|
