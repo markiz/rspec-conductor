@@ -16,7 +16,7 @@ module RSpec
         prefork_require: 'config/application.rb',
         postfork_require: :spec_helper,
         print_slowest_count: nil,
-        example_status_persistence_path: nil,
+        example_status_persistence_path: Conductor.default_example_status_persistence_path,
       }.freeze
 
       def self.run(argv)

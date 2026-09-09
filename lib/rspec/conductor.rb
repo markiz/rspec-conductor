@@ -24,6 +24,10 @@ module RSpec
     def self.default_first_is_1?
       ENV["RSPEC_CONDUCTOR_FIRST_IS_1"] == "1"
     end
+
+    def self.default_example_status_persistence_path
+      ENV["RSPEC_CONDUCTOR_EXAMPLE_STATUS_PERSISTENCE_PATH"]
+    end
   end
 end
 
