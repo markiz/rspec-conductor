@@ -49,6 +49,7 @@ module RSpec
         ex = notification.example
         @socket.send_message(
           type: :example_pending,
+          id: ex.id,
           file: @file,
           description: ex.full_description,
           location: ex.location,

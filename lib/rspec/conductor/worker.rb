@@ -129,6 +129,16 @@ module RSpec
             example_groups.each { |g| g.run(reporter) }
           end
 
+          RSpec.world.all_examples.reject { |e| e.execution_result.status }.each do |e|
+            @socket.send_message(
+              type: :example_filtered,
+              id: e.id,
+              file: file,
+              description: e.full_description,
+              location: e.location
+            )
+          end
+
           @socket.send_message(
             type: :spec_complete,
             file: file,

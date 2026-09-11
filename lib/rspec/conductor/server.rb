@@ -171,7 +171,9 @@ module RSpec
             initiate_shutdown
           end
         when :example_pending
-          @suite_run.example_pending
+          @suite_run.example_pending(message)
+        when :example_filtered
+          @suite_run.example_filtered(message)
         when :example_retried
           @formatter.print_retry_message(message) if @display_retry_backtraces
         when :spec_complete
