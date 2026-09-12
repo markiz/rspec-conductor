@@ -16,6 +16,7 @@ module RSpec
         prefork_require: 'config/application.rb',
         postfork_require: :spec_helper,
         print_slowest_count: nil,
+        example_status_persistence_path: Conductor.default_example_status_persistence_path,
       }.freeze
 
       def self.run(argv)
@@ -102,6 +103,10 @@ module RSpec
             @conductor_options[:print_slowest_count] = n
           end
 
+          opts.on("--example-status-persistence-path FILENAME", String, "Persist example statuses to a given file (same as rspec config.example_status_persistence_file_path)") do |filename|
+            @conductor_options[:example_status_persistence_path] = filename
+          end
+
           opts.on("--verbose", "Enable debug output") do
             @conductor_options[:verbose] = true
           end
@@ -126,6 +131,7 @@ module RSpec
           formatter: @conductor_options[:formatter],
           display_retry_backtraces: @conductor_options[:display_retry_backtraces],
           print_slowest_count: @conductor_options[:print_slowest_count],
+          example_status_persistence_path: @conductor_options[:example_status_persistence_path],
           verbose: @conductor_options[:verbose],
         ).run
       end
