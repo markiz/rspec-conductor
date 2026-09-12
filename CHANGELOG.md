@@ -1,4 +1,4 @@
-## [1.0.12] - TBD
+## [1.0.12] - 2026-09-12
 
 - Add --example-status-persistence option to mimic rspec example status persistence runner config and to support --only-failures on repeat runs
 
