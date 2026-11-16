@@ -1,4 +1,6 @@
-## [1.0.13] - TBD
+## [1.0.14] - TBD
+
+## [1.0.13] - 2026-11-16
 
 - Fix stdin echo not being reenabled after the program is terminated
 - When --example-status-persistence flag is set and the status file is available, run slowest spec files first (helpful when you have a mix of super slow and super fast spec files)
