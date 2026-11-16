@@ -1,5 +1,7 @@
 ## [1.0.13] - TBD
 
+- Fix stdin echo not being reenabled after the program is terminated
+
 ## [1.0.12] - 2026-09-12
 
 - Add --example-status-persistence option to mimic rspec example status persistence runner config and to support --only-failures on repeat runs
