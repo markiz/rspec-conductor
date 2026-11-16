@@ -1,5 +1,7 @@
 ## [1.0.14] - TBD
 
+- Fix --print-slowest crash when there are pending specs
+
 ## [1.0.13] - 2026-11-16
 
 - Fix stdin echo not being reenabled after the program is terminated
