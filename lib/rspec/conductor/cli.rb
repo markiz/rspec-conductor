@@ -31,7 +31,9 @@ module RSpec
 
       def run
         parse_arguments
-        start_server
+
+        $stdout.sync = true
+        disabling_stdin_echo { start_server }
       end
 
       private
@@ -134,6 +136,10 @@ module RSpec
           example_status_persistence_path: @conductor_options[:example_status_persistence_path],
           verbose: @conductor_options[:verbose],
         ).run
+      end
+
+      def disabling_stdin_echo
+        $stdin.tty? ? $stdin.noecho { yield } : yield
       end
     end
   end
