@@ -1,4 +1,4 @@
-## [1.0.14] - TBD
+## [1.0.14] - 2026-11-16
 
 - Fix --print-slowest crash when there are pending specs
 
