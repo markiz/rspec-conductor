@@ -51,7 +51,7 @@ module RSpec
         def print_slowest(suite_run, n)
           puts "\n\n"
           puts "Slowest #{n} specs:"
-          suite_run.example_stats.sort_by { |e| -e[:run_time] }.take(n).each_with_index do |e, i|
+          suite_run.example_stats.select { |e| e[:run_time] }.sort_by { |e| -e[:run_time] }.take(n).each_with_index do |e, i|
             puts "%3d. (%8.2fms) %s @ %s" % [i + 1, e[:run_time] * 1000, colorize(e[:description], :dim), colorize(e[:location], :cyan)]
           end
         end

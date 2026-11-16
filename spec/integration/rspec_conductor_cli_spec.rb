@@ -161,11 +161,11 @@ describe "rspec-conductor executable" do
     {
       name: "--print-slowest param",
       specs: {
-        "a_spec.rb" => "RSpec.describe('test --print-slowest') {\n it('works') { expect(true).to be(true) }\n it('fails') { expect(false).to be(true) }\n }"
+        "a_spec.rb" => "RSpec.describe('test --print-slowest') {\n it('works') { expect(true).to be(true) }\n it('fails') { expect(false).to be(true) }\n xit('pending') { expect(false).to be(true) } }"
       },
       args: ["--print-slowest", "10"],
       expect_exit: 1,
-      expect_output: ["Slowest 10 specs", "test --print-slowest works", "a_spec.rb:2", "test --print-slowest fails", "a_spec.rb:3"]
+      expect_output: ["Slowest 10 specs", "test --print-slowest works", "a_spec.rb:2", "test --print-slowest fails", "a_spec.rb:3", "1 passed, 1 failed, 1 pending"]
     },
     {
       name: "--example-status-persistence",
