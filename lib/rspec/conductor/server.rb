@@ -91,8 +91,24 @@ module RSpec
         config_options.configure(config)
         debug "RSpec config: #{config.inspect}"
         debug "Files to run: #{config.files_to_run}"
-        @spec_queue = config.files_to_run.shuffle(random: Random.new(@seed))
+        @spec_queue = ordered_files_to_run(config)
         @suite_run.spec_files_total = @spec_queue.size
+      end
+
+      def ordered_files_to_run(config)
+        slowest_files_sorted = ExampleStatusPersister.load(@example_status_persistence_path)
+                                 .select { |r| r.execution_result.run_time }
+                                 .each_with_object(Hash.new { |h, k| h[k] = 0 }) { |r, h| h[ExampleStatusPersister.example_id_to_full_path(r.id)] += r.execution_result.run_time }
+                                 .select { |fn, _runtime| fn }
+                                 .sort_by { |_fn, runtime| -runtime }
+                                 .map(&:first)
+
+        all_files_to_run = config.files_to_run
+        slowest_to_run = slowest_files_sorted & all_files_to_run
+        rest_to_run = (all_files_to_run - slowest_to_run).shuffle(random: Random.new(@seed))
+
+        debug "Running #{slowest_to_run} files first, the rest are shuffled randomly: #{rest_to_run}"
+        slowest_to_run + rest_to_run
       end
 
       def preload_application
