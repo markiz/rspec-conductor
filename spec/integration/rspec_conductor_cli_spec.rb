@@ -149,6 +149,13 @@ describe "rspec-conductor executable" do
       expect_output: "1 passed, 0 failed, 0 pending"
     },
     {
+      name: "fancy formatter with --offset",
+      specs: { "pass_spec.rb" => 'RSpec.describe("Pass") { it("works") { expect(1).to eq(1) } }' },
+      args: ["-w", "1", "--offset", "1", "--formatter", "fancy"],
+      expect_exit: 0,
+      expect_output: ["Worker 2", "1 passed, 0 failed, 0 pending"]
+    },
+    {
       name: "rspec before(:suite) hooks",
       specs: {
         "spec_helper.rb" => 'RSpec.configure { |c| c.before(:suite) { $before_suite_hook_ran = true } }',

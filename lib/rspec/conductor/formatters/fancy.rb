@@ -10,7 +10,7 @@ module RSpec
           $stdout.tty? && $stdout.winsize[0] >= 30 && $stdout.winsize[1] >= 80
         end
 
-        def initialize(worker_count:, **kwargs)
+        def initialize(worker_number_offset:, worker_count:, **kwargs)
           @terminal = Util::Terminal.new
           @dots_string = +""
           @last_error = nil
@@ -18,7 +18,8 @@ module RSpec
           @progress_bar_line = @terminal.line
           @terminal.puts
           @workers_box = @terminal.box
-          @worker_lines = worker_count.times.to_h { |i| [i + 1, @workers_box.line] }
+          @worker_number_offset = worker_number_offset
+          @worker_lines = worker_count.times.to_h { |i| [@worker_number_offset + i + 1, @workers_box.line] }
           @terminal.puts
           @dots_line = @terminal.line(truncate: false)
           @terminal.puts

@@ -43,7 +43,7 @@ module RSpec
                            else
                              (!@verbose && Formatters::Fancy.recommended?) ? Formatters::Fancy : Formatters::Plain
                            end
-        @formatter = @formatter_class.new(worker_count: @worker_count)
+        @formatter = @formatter_class.new(worker_count: @worker_count, worker_number_offset: @worker_number_offset)
         @suite_run = SuiteRun.new
 
         Dir.chdir(Conductor.root)
