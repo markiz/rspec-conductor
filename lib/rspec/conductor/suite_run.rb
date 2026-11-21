@@ -62,7 +62,7 @@ module RSpec
       end
 
       def worker_crashed(message)
-        @errors << { description: "Worker crashed during spec execution", location: message[:file] }
+        @errors << { description: "Worker #{message[:number]} crashed during spec execution with exit status #{message[:status]} / signal #{message[:signal]}", location: message[:file] }
         @worker_crashes += 1
       end
 

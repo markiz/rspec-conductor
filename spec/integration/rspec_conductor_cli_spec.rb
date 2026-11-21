@@ -167,11 +167,11 @@ describe "rspec-conductor executable" do
     {
       name: "exit! in a spec file",
       specs: {
-        "exit_spec.rb" => 'RSpec.describe("Exit") { it("exits immediately") { exit! } }'
+        "exit_spec.rb" => 'RSpec.describe("Exit") { it("exits immediately") { exit!(99) } }'
       },
       args: ["-w", "1"],
       expect_exit: 1,
-      expect_output: ["Worker crashed", /Failures:.*exit_spec\.rb/m, /rspec .*exit_spec\.rb/]
+      expect_output: ["Worker 1 crashed", "exit status 99", /Failures:.*exit_spec\.rb/m, /rspec .*exit_spec\.rb/]
     },
     {
       name: "rspec before(:suite) hooks",
