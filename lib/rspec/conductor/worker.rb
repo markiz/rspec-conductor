@@ -143,13 +143,14 @@ module RSpec
             type: :spec_complete,
             file: file,
           )
-        rescue StandardError => e
+        rescue StandardError, SyntaxError => e
           debug "Spec error: #{e.class}: #{e.message}"
           debug "Backtrace: #{e.backtrace.join("\n")}"
           @socket.send_message(
             type: :spec_error,
             file: file,
-            error: e.message,
+            error_class: e.class.name,
+            error_message: e.message,
             backtrace: e.backtrace
           )
         end

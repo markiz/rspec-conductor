@@ -234,7 +234,7 @@ module RSpec
 
         dead_worker_processes.each do |worker_process, exitstatus|
           cleanup_worker_process(worker_process, status: :terminated)
-          @suite_run.worker_crashed
+          @suite_run.worker_crashed({ file: worker_process.current_spec })
           debug "Worker #{worker_process.number} exited with status #{exitstatus.exitstatus}, signal #{exitstatus.termsig}"
         end
       end

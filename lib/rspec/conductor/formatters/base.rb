@@ -28,7 +28,7 @@ module RSpec
             suite_run.errors.each_with_index do |error, i|
               puts "  #{i + 1}) #{error[:description]}"
               puts colorize("     #{error[:message]}", :red) if error[:message]
-              puts colorize("     #{error[:location]}", :cyan)
+              puts colorize("     #{error[:location]}", :cyan) if error[:location]
               if error[:backtrace]&.any?
                 puts "     Backtrace:"
                 error[:backtrace].each { |line| puts "       #{line}" }
