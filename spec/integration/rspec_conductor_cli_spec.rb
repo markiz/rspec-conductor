@@ -156,6 +156,24 @@ describe "rspec-conductor executable" do
       expect_output: ["Worker 2", "1 passed, 0 failed, 0 pending"]
     },
     {
+      name: "syntax error in a spec file",
+      specs: {
+        "broken_spec.rb" => 'RSpec.describe("Broken") { it("nope") { expect(true).to be(true) }'
+      },
+      args: ["-w", "1"],
+      expect_exit: 1,
+      expect_output: [/Failures:.*broken_spec\.rb/m, /Failures:.*(?:syntax error|SyntaxError)/m, /rspec .*broken_spec\.rb/]
+    },
+    {
+      name: "exit! in a spec file",
+      specs: {
+        "exit_spec.rb" => 'RSpec.describe("Exit") { it("exits immediately") { exit!(99) } }'
+      },
+      args: ["-w", "1"],
+      expect_exit: 1,
+      expect_output: ["Worker 1 crashed", "exit status 99", /Failures:.*exit_spec\.rb/m, /rspec .*exit_spec\.rb/]
+    },
+    {
       name: "rspec before(:suite) hooks",
       specs: {
         "spec_helper.rb" => 'RSpec.configure { |c| c.before(:suite) { $before_suite_hook_ran = true } }',

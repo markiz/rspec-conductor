@@ -1,6 +1,8 @@
 ## [1.0.15] - TBD
 
 - Fix fancy formatter crash when using the --offset option
+- Better error reporting for syntax errors
+- Better error reporting for unhandled worker crashes
 
 ## [1.0.14] - 2026-11-16
 

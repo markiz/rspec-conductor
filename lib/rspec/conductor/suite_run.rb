@@ -52,7 +52,7 @@ module RSpec
       end
 
       def spec_file_error(message)
-        @errors << message
+        @errors << message.merge(description: "Spec file crashed with error: #{message[:error_class]}:#{message[:error_message]}", location: message[:file])
       end
 
       def spec_file_processed_percentage
@@ -61,7 +61,8 @@ module RSpec
         @spec_files_processed.to_f / @spec_files_total
       end
 
-      def worker_crashed
+      def worker_crashed(message)
+        @errors << { description: "Worker #{message[:number]} crashed during spec execution with exit status #{message[:status]} / signal #{message[:signal]}", location: message[:file] }
         @worker_crashes += 1
       end
 
