@@ -1,5 +1,7 @@
 ## [1.0.15] - TBD
 
+- Fix fancy formatter crash when using the --offset option
+
 ## [1.0.14] - 2026-11-16
 
 - Fix --print-slowest crash when there are pending specs
