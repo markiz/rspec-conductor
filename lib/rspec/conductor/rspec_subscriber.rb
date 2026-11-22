@@ -81,6 +81,11 @@ module RSpec
         )
       end
 
+      # rspec-core idiosyncrasy: only used to deduplicate the registered formatters
+      def output
+        @socket.io
+      end
+
       private
 
       def format_backtrace(backtrace, example_metadata = nil)
