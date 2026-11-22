@@ -105,7 +105,12 @@ module RSpec
             @conductor_options[:print_slowest_count] = n
           end
 
-          opts.on("--example-status-persistence-path FILENAME", String, "Persist example statuses to a given file (same as rspec config.example_status_persistence_file_path)") do |filename|
+          opts.on("--example-status-persistence FILENAME", String, "Persist example statuses to a given file (same as rspec config.example_status_persistence_file_path)") do |filename|
+            @conductor_options[:example_status_persistence_path] = filename
+          end
+
+          opts.on("--example-status-persistence-path FILENAME", String, "(DEPRECATED) Same as --example-status-persistence") do |filename|
+            warn "[DEPRECATION] --example-status-persistence-path command line option is deprecated and will be removed in future releases, please replace with --example-status-persistence"
             @conductor_options[:example_status_persistence_path] = filename
           end
 
