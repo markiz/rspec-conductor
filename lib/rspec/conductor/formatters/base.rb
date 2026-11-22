@@ -41,10 +41,11 @@ module RSpec
           puts "Total runtime: #{suite_run.total_runtime.round(2)}s"
           puts "Suite: #{success ? colorize("PASSED", :green) : colorize("FAILED", :red)}"
 
-          if suite_run.errors.any?
+          locations = suite_run.errors.map { |e| e[:location] }.compact
+          if locations.any?
             puts ""
             puts "To rerun failed examples:"
-            puts "  rspec #{suite_run.errors.map { |e| e[:location] }.join(" ")}"
+            puts "  rspec #{locations.join(" ")}"
           end
         end
 

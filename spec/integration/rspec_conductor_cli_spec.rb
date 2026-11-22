@@ -184,6 +184,26 @@ describe "rspec-conductor executable" do
       expect_output: "1 passed, 0 failed, 0 pending"
     },
     {
+      name: "before(:suite) failure fails the run",
+      specs: {
+        "spec_helper.rb" => 'RSpec.configure { |c| c.before(:suite) { raise "before suite boom" } }',
+        "pass_spec.rb" => 'RSpec.describe("Pass") { it("works") { expect(1).to eq(1) } }'
+      },
+      args: ["-w", "1", "--postfork-require", "spec_helper.rb"],
+      expect_exit: 1,
+      expect_output: ["before(:suite)", "spec_helper.rb", "0 passed, 0 failed, 0 pending", "Failures:", "Suite: FAILED"]
+    },
+    {
+      name: "after(:suite) failure fails the run",
+      specs: {
+        "spec_helper.rb" => 'RSpec.configure { |c| c.after(:suite) { raise "after suite boom" } }',
+        "pass_spec.rb" => 'RSpec.describe("Pass") { it("works") { expect(1).to eq(1) } }'
+      },
+      args: ["-w", "1", "--postfork-require", "spec_helper.rb"],
+      expect_exit: 1,
+      expect_output: ["after(:suite)", "spec_helper.rb", "1 passed, 0 failed, 0 pending", "Failures:", "Suite: FAILED"]
+    },
+    {
       name: "--print-slowest param",
       specs: {
         "a_spec.rb" => "RSpec.describe('test --print-slowest') {\n it('works') { expect(true).to be(true) }\n it('fails') { expect(false).to be(true) }\n xit('pending') { expect(false).to be(true) } }"

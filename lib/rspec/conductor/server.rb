@@ -199,6 +199,8 @@ module RSpec
           debug "Spec error details: #{message[:error_class]}:#{message[:error_message]}"
           worker_process.current_spec = nil
           assign_work(worker_process)
+        when :non_example_exception
+          @suite_run.non_example_exception(message)
         end
         @formatter.handle_worker_message(worker_process, message, @suite_run)
       end

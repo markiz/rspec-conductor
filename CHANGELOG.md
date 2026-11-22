@@ -3,6 +3,8 @@
 - Fix fancy formatter crash when using the --offset option
 - Better error reporting for syntax errors
 - Better error reporting for unhandled worker crashes
+- Better error reporting for before(:suite)/after(:suite) errors
+- Deprecate undocumented `--example-status-persistence-path` cli flag syntax;  `--example-status-persistence` is still there; both were accidentally working due to how ruby OptionParser parses flags, but the `-path` flag was never intended
 
 ## [1.0.14] - 2026-11-16
 

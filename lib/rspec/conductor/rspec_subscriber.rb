@@ -8,7 +8,8 @@ module RSpec
       RSpec::Core::Formatters.register self,
         :example_passed,
         :example_failed,
-        :example_pending
+        :example_pending,
+        :non_example_exception
 
       def initialize(socket, file, shutdown_check)
         @socket = socket
@@ -58,6 +59,16 @@ module RSpec
         @shutdown_check.call
       end
 
+      def non_example_exception(notification)
+        @socket.send_message(
+          type: :non_example_exception,
+          exception_class: notification.exception.class.name,
+          message: notification.exception.message,
+          backtrace: notification.exception.backtrace,
+          context_description: notification.context_description,
+        )
+      end
+
       # This one is invoked by rspec-retry, hence the slightly different api from example_* methods
       def retry(ex)
         @socket.send_message(
@@ -68,6 +79,11 @@ module RSpec
           message: ex.exception&.message,
           backtrace: format_backtrace(ex.exception&.backtrace, ex.metadata)
         )
+      end
+
+      # rspec-core idiosyncrasy: only used to deduplicate the registered formatters
+      def output
+        @socket.io
       end
 
       private
