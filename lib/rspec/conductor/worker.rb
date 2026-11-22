@@ -19,6 +19,8 @@ module RSpec
         require_postfork_preloads
 
         loop do
+          break if @shutdown_requested
+
           debug "Waiting for message"
           message = @message_queue.shift || @socket.receive_message
 
@@ -34,11 +36,9 @@ module RSpec
             debug "Running spec: #{message[:file]}"
             run_spec(message[:file])
             debug "Finished spec: #{message[:file]}"
-            break if @shutdown_requested
           when :shutdown
             debug "Shutdown received"
             @shutdown_requested = true
-            break
           end
         end
 
@@ -76,6 +76,8 @@ module RSpec
       end
 
       def require_postfork_preloads
+        RSpec.configuration.add_formatter(RSpecSubscriber.new(@socket, nil, -> { check_for_shutdown }))
+
         if @postfork_require == :spec_helper
           rails_helper = File.expand_path("rails_helper.rb", @default_full_path)
           spec_helper = File.expand_path("spec_helper.rb", @default_full_path)
@@ -102,6 +104,7 @@ module RSpec
 
         debug "RSpec initialized, running before(:suite) hooks"
         RSpec.configuration.__run_before_suite_hooks
+        @shutdown_requested = true if RSpec.world.wants_to_quit
       end
 
       def run_spec(file)

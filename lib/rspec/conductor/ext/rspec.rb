@@ -13,3 +13,18 @@ class RSpec::Core::Configuration
     run_suite_hooks("an `after(:suite)` hook", @after_suite_hooks) if respond_to?(:run_suite_hooks, true)
   end
 end
+
+# RSpec doesn't provide us with a good way to handle non-example exceptions,
+# such as before(:suite)/after(:suite) crashes, so we're implementing it as
+# another formatter hook.
+RSpec::Conductor::NonExampleExceptionNotification = Struct.new(:exception, :context_description)
+class RSpec::Core::Reporter
+  mod = Module.new do
+    def notify_non_example_exception(exception, context_description)
+      super
+      notify :non_example_exception, RSpec::Conductor::NonExampleExceptionNotification.new(exception, context_description)
+    end
+  end
+
+  prepend mod
+end

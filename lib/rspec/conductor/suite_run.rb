@@ -55,6 +55,13 @@ module RSpec
         @errors << message.merge(description: "Spec file crashed with error: #{message[:error_class]}:#{message[:error_message]}", location: message[:file])
       end
 
+      def non_example_exception(message)
+        @errors << {
+          description: [message[:context_description], message[:exception_class], message[:message]].compact.join(": "),
+          backtrace: message[:backtrace]
+        }
+      end
+
       def spec_file_processed_percentage
         return 0.0 if @spec_files_total.zero?
 
