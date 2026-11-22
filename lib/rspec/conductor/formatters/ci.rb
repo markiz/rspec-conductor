@@ -31,7 +31,7 @@ module RSpec
             puts "Failures:\n"
             suite_run.errors.each_with_index do |error, i|
               puts "  #{i + 1}) #{error[:description]}"
-              puts "     #{error[:location]}"
+              puts "     #{error[:location]}" if error[:location]
               puts "     #{error[:message]}" if error[:message]
               if error[:backtrace]&.any?
                 puts "     Backtrace:"
