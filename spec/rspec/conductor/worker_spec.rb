@@ -113,6 +113,75 @@ describe RSpec::Conductor::Worker do
     end
   end
 
+  context "with run_all_when_everything_filtered and no focused examples" do
+    let(:spec_content) do
+      <<~RUBY
+        RSpec.configure do |config|
+          config.filter_run focus: true
+          config.run_all_when_everything_filtered = true
+        end
+
+        RSpec.describe "Test" do
+          it "passes" do
+            expect(1).to eq(1)
+          end
+        end
+      RUBY
+    end
+
+    it "falls back to running every example instead of filtering them all out" do
+      pid = run_worker_in_fork
+
+      server_socket.send_message(type: :worker_assigned_spec, file: spec_file.path)
+      server_socket.send_message(type: :shutdown)
+
+      messages = collect_messages
+      wait_for_worker(pid)
+
+      expect(messages).to match([
+        hash_including(type: "example_passed", description: "Test passes", file: spec_file.path),
+        hash_including(type: "spec_complete", file: spec_file.path)
+      ])
+    end
+  end
+
+  context "with run_all_when_everything_filtered and some focused examples" do
+    let(:spec_content) do
+      <<~RUBY
+        RSpec.configure do |config|
+          config.filter_run focus: true
+          config.run_all_when_everything_filtered = true
+        end
+
+        RSpec.describe "Test" do
+          it "is not focused" do
+            expect(1).to eq(1)
+          end
+
+          it "is focused", :focus do
+            expect(1).to eq(1)
+          end
+        end
+      RUBY
+    end
+
+    it "still honors the focus filter" do
+      pid = run_worker_in_fork
+
+      server_socket.send_message(type: :worker_assigned_spec, file: spec_file.path)
+      server_socket.send_message(type: :shutdown)
+
+      messages = collect_messages
+      wait_for_worker(pid)
+
+      expect(messages).to match([
+        hash_including(type: "example_passed", description: "Test is focused", file: spec_file.path),
+        hash_including(type: "example_filtered", description: "Test is not focused", file: spec_file.path),
+        hash_including(type: "spec_complete", file: spec_file.path)
+      ])
+    end
+  end
+
   it "shuts down cleanly on shutdown message" do
     pid = run_worker_in_fork
 
