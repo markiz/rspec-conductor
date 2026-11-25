@@ -1,5 +1,6 @@
 ## [1.0.15] - TBD
 
+- Add `rspec_conductor:load_schema` rake task to load schema into test databases without create/drop/seed
 - Fix fancy formatter crash when using the --offset option
 - Better error reporting for syntax errors
 - Better error reporting for unhandled worker crashes

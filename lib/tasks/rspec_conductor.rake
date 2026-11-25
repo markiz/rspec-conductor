@@ -16,6 +16,14 @@ module RSpec
           end
         end
 
+        def load_schema_databases(count)
+          schema_format, schema_file = schema_format_and_file
+
+          run_for_each_database(count, "Loading schema for") do
+            db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.load_schema(config, schema_format, schema_file) }
+          end
+        end
+
         def setup_databases(count)
           schema_format, schema_file = schema_format_and_file
 
@@ -133,6 +141,12 @@ namespace :rspec_conductor do
   task :drop, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
     count = (args[:count] || RSpec::Conductor.default_worker_count).to_i
     RSpec::Conductor::DatabaseTasks.drop_databases(count)
+  end
+
+  desc "Load schema into parallel test databases (default: #{RSpec::Conductor.default_worker_count})"
+  task :load_schema, [:count] => %w(set_rails_env_to_test environment) do |_t, args|
+    count = (args[:count] || RSpec::Conductor.default_worker_count).to_i
+    RSpec::Conductor::DatabaseTasks.load_schema_databases(count)
   end
 
   desc "Setup parallel test databases (drop + create + schema load + seed) (default: #{RSpec::Conductor.default_worker_count})"
