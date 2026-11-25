@@ -5,6 +5,8 @@
 - Better error reporting for unhandled worker crashes
 - Better error reporting for before(:suite)/after(:suite) errors
 - Deprecate undocumented `--example-status-persistence-path` cli flag syntax;  `--example-status-persistence` is still there; both were accidentally working due to how ruby OptionParser parses flags, but the `-path` flag was never intended
+- Partial support for run_all_when_everything_filtered config option (thx @sobrinho)
+  Due to architecture limitations, it will NOT work across the entire suite, only within the same file.
 
 ## [1.0.14] - 2026-11-16
 

@@ -125,12 +125,8 @@ module RSpec
           load file
           debug "Example groups after load: #{RSpec.world.example_groups.count}"
 
-          # Normally invoked by RSpec::Core::Runner#run_specs. We call it ourselves since
-          # we drive example groups directly, bypassing Runner. Without it, options like
-          # `config.filter_run_when_matching focus: true` combined with
-          # `config.run_all_when_everything_filtered = true` never fall back to running
-          # everything when nothing matches the inclusion filter within a given file,
-          # since each file is filtered independently of the rest of the suite.
+          loaded_examples = RSpec.world.all_examples
+          # required by run_all_when_everything_filtered
           RSpec.world.announce_filters
 
           example_groups = RSpec.world.ordered_example_groups
@@ -140,7 +136,7 @@ module RSpec
             example_groups.each { |g| g.run(reporter) }
           end
 
-          RSpec.world.all_examples.reject { |e| e.execution_result.status }.each do |e|
+          loaded_examples.reject { |e| e.execution_result.status }.each do |e|
             @socket.send_message(
               type: :example_filtered,
               id: e.id,

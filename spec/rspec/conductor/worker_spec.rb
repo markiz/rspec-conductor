@@ -182,6 +182,38 @@ describe RSpec::Conductor::Worker do
     end
   end
 
+  context "with all examples filtered out" do
+    let(:spec_content) do
+      <<~RUBY
+        RSpec.configure do |config|
+          config.run_all_when_everything_filtered = false
+          config.filter_run focus: true
+        end
+
+        RSpec.describe "Test" do
+          it "is not focused" do
+            expect(1).to eq(1)
+          end
+        end
+      RUBY
+    end
+
+    it "reports examples that were filtered out" do
+      pid = run_worker_in_fork
+
+      server_socket.send_message(type: :worker_assigned_spec, file: spec_file.path)
+      server_socket.send_message(type: :shutdown)
+
+      messages = collect_messages
+      wait_for_worker(pid)
+
+      expect(messages).to match([
+        hash_including(type: "example_filtered", description: "Test is not focused", file: spec_file.path),
+        hash_including(type: "spec_complete", file: spec_file.path)
+      ])
+    end
+  end
+
   it "shuts down cleanly on shutdown message" do
     pid = run_worker_in_fork
 

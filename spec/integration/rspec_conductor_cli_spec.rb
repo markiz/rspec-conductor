@@ -87,6 +87,26 @@ describe "rspec-conductor executable" do
       expect_output: "1 passed, 0 failed, 0 pending"
     },
     {
+      name: "run_all_when_everything_filtered rspec configuration option",
+      specs: {
+        "spec_helper.rb" => "RSpec.configure { |config| config.run_all_when_everything_filtered = true }",
+        "aaa_spec.rb" => 'RSpec.describe("AAA") { it("does not match the tag") { expect(true).to be(true) }  }',
+      },
+      args: ["--postfork-require", "spec_helper.rb", "--verbose", "--", "--tag=to_run"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
+      name: "run_all_when_everything_filtered inert when there is something to run",
+      specs: {
+        "spec_helper.rb" => "RSpec.configure { |config| config.run_all_when_everything_filtered = true }",
+        "aaa_spec.rb" => 'RSpec.describe("AAA") { it("does not match the tag") { expect(true).to be(false) }; it("matches the tag", :to_run) { expect(true).to be(true) } }',
+      },
+      args: ["--postfork-require", "spec_helper.rb", "--verbose", "--", "--tag=to_run"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
       name: "--tag rspec configuration option used to include certain tags",
       specs: {
         "aaa_spec.rb" => 'RSpec.describe("AAA") { it("passes") { expect(true).to be(true) } }',
