@@ -17,8 +17,6 @@ module RSpec
         end
 
         def setup_databases(count)
-          schema_format, schema_file = schema_format_and_file
-
           run_for_each_database(count, "Setting up") do
             puts "Dropping database(s)"
             db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.drop(config) }
@@ -27,7 +25,12 @@ module RSpec
             db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.create(config) }
 
             puts "Loading schema"
-            db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.load_schema(config, schema_format, schema_file) }
+            # Deliberately not passing format/file: left at their defaults, Rails resolves
+            # both per db_config on its own (schema_format, then schema_dump_path/
+            # dump_filename), the same way `rails db:schema:load`/`db:test:prepare` do.
+            # Hardcoding db/schema.rb for every config made every database in a
+            # multi-database app load the primary database's schema.
+            db_configs.each { |config| ::ActiveRecord::Tasks::DatabaseTasks.load_schema(config) }
 
             puts "Loading seed"
             ::ActiveRecord::Tasks::DatabaseTasks.load_seed
@@ -103,19 +106,6 @@ module RSpec
           raise ArgumentError, "could not find database yaml or the yaml is empty" if parsed_yaml.empty?
 
           ::ActiveRecord::Base.configurations = ::ActiveRecord::DatabaseConfigurations.new(parsed_yaml)
-        end
-
-        def schema_format_and_file
-          ruby_schema = File.join(::Rails.root, "db", "schema.rb")
-          sql_schema = File.join(::Rails.root, "db", "structure.sql")
-
-          if File.exist?(ruby_schema)
-            [:ruby, ruby_schema]
-          elsif File.exist?(sql_schema)
-            [:sql, sql_schema]
-          else
-            raise ArgumentError, "Neither db/schema.rb nor db/structure.sql found"
-          end
         end
       end
     end

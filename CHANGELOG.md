@@ -1,5 +1,6 @@
 ## [1.0.15] - TBD
 
+- Fix `rspec_conductor:setup` loading the primary database's schema file into every database in multi-database apps; it now lets Rails resolve each database's own schema dump path
 - Fix fancy formatter crash when using the --offset option
 - Better error reporting for syntax errors
 - Better error reporting for unhandled worker crashes
