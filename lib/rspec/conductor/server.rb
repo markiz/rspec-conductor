@@ -161,8 +161,8 @@ module RSpec
           number: worker_number,
           test_env_number: (@first_is_1 || worker_number != 1) ? worker_number.to_s : "",
           on_message: ->(worker_process, message) { handle_worker_message(worker_process, message) },
-          on_stdout: ->(string) { @formatter.handle_worker_stdout(worker_number, string) },
-          on_stderr: ->(string) { @formatter.handle_worker_stderr(worker_number, string) },
+          on_stdout: ->(string) { @formatter.handle_worker_stdout(worker_number, Util::StringUtils.convert_to_safe_utf8(string)) },
+          on_stderr: ->(string) { @formatter.handle_worker_stderr(worker_number, Util::StringUtils.convert_to_safe_utf8(string)) },
           debug_io: @verbose ? $stderr : nil,
           rspec_args: @rspec_args,
           postfork_require: @postfork_require,
@@ -265,7 +265,7 @@ module RSpec
       def debug(message)
         return unless @verbose
 
-        @formatter.print_debug("[conductor] #{message}")
+        @formatter.print_debug("[conductor] #{Util::StringUtils.convert_to_safe_utf8(message)}")
       end
     end
   end

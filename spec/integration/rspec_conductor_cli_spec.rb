@@ -137,6 +137,53 @@ describe "rspec-conductor executable" do
       expect_output: "1 passed, 1 failed, 1 pending"
     },
     {
+      name: "example description containing invalid UTF-8 bytes",
+      specs: {
+        "binary_description_spec.rb" => <<~RUBY
+          name = "r\\xFFsum\\xFF.txt".b
+          RSpec.describe("archive") { it("lists \#{name}") { expect(1).to eq(1) } }
+        RUBY
+      },
+      args: ["-w", "1"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
+      name: "binary description with profile_examples and Encoding.default_internal",
+      specs: {
+        "spec_helper.rb" => "Encoding.default_internal = Encoding::UTF_8\nRSpec.configure { |c| c.profile_examples = 10 }\n",
+        "binary_description_spec.rb" => <<~RUBY
+          name = "r\\xC3\\xA9sum\\xC3\\xA9.txt".b
+          RSpec.describe("archive") { it("lists \#{name}") { expect(1).to eq(1) } }
+        RUBY
+      },
+      args: ["-w", "1", "--postfork-require", "spec_helper.rb", "--verbose"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
+      name: "binary worker stdout/stderr",
+      specs: {
+        "server_env.rb" => "$stdout.set_encoding(Encoding::UTF_8)\n$stderr.set_encoding(Encoding::UTF_8)",
+        "binary_stdout_spec.rb" => <<~RUBY
+          RSpec.describe "binary stdout" do
+            it("writes raw bytes") do
+              $stdout.binmode
+              $stdout.write("boom \\xFF\\n")
+              $stdout.flush
+              $stderr.binmode
+              $stderr.write("boom \\xFF\\n")
+              $stderr.flush
+              expect(1).to eq 1
+            end
+          end
+        RUBY
+      },
+      args: ["-w", "1", "--formatter", "plain", "--prefork-require", "server_env.rb"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 0 pending"
+    },
+    {
       name: "with seed option",
       specs: { "pass_spec.rb" => 'RSpec.describe("Pass") { it("works") { expect(1).to eq(1) } }' },
       args: ["-w", "1", "-s", "42"],
@@ -153,6 +200,26 @@ describe "rspec-conductor executable" do
       args: ["-w", "1", "--formatter", "plain"],
       expect_exit: 1,
       expect_output: "1 passed, 1 failed, 1 pending"
+    },
+    {
+      name: "ci formatter shows something",
+      specs: {
+        "pass_spec.rb" => 'RSpec.describe("Pass") { it("works") { expect(1).to eq(1) } }',
+        "pending_spec.rb" => 'RSpec.describe("Pending") { it("waits") { pending "later"; fail } }'
+      },
+      args: ["-w", "1", "--formatter", "ci"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 1 pending"
+    },
+    {
+      name: "fancy formatter shows something (doesn't crash, at least)",
+      specs: {
+        "pass_spec.rb" => 'RSpec.describe("Pass") { it("works") { expect(1).to eq(1) } }',
+        "pending_spec.rb" => 'RSpec.describe("Pending") { it("waits") { pending "later"; fail } }'
+      },
+      args: ["-w", "1", "--formatter", "fancy"],
+      expect_exit: 0,
+      expect_output: "1 passed, 0 failed, 1 pending"
     },
     {
       name: "ci formatter shows periodic status",

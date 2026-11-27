@@ -13,7 +13,7 @@ module RSpec
         end
 
         def send_message(message)
-          json = JSON.generate(message)
+          json = JSON.generate(Util::StringUtils.convert_to_safe_utf8(message))
           length = [json.bytesize].pack("N")
           io.write(length)
           io.write(json.b)
