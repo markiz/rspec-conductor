@@ -7,6 +7,12 @@
 - Deprecate undocumented `--example-status-persistence-path` cli flag syntax;  `--example-status-persistence` is still there; both were accidentally working due to how ruby OptionParser parses flags, but the `-path` flag was never intended
 - Partial support for run_all_when_everything_filtered config option (thx @sobrinho)
   Due to architecture limitations, it will NOT work across the entire suite, only within the same file.
+- More robust handling for binary characters in stdout/stderr/spec descriptions (reported by @6temes)
+  We shouldn't crash anymore if someone outputs a bunch of invalid utf-8 codepoints, or if there are
+  invalid utf-8 codepoints in example descriptions.
+  However, there's a huge number of ways you can still mess with the runner, for example by naming your
+  file `spec/invalid\xFF_spec.rb`. Half the stdlib will refuse to work with paths like that.
+  That's why I'm drawing the line at std-streams and protocol messages.
 
 ## [1.0.14] - 2026-11-16
 

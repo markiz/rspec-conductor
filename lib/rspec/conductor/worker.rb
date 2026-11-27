@@ -199,7 +199,7 @@ module RSpec
       end
 
       def debug(message)
-        @debug_io.puts message if @debug_io
+        @debug_io.puts Util::StringUtils.convert_to_safe_utf8(message) if @debug_io
       end
 
       def null_io_out

@@ -31,6 +31,7 @@ module RSpec
   end
 end
 
+require_relative "conductor/util/string_utils"
 require_relative "conductor/util/ansi"
 require_relative "conductor/util/screen_buffer"
 require_relative "conductor/util/terminal"
