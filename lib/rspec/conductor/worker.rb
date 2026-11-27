@@ -203,7 +203,7 @@ module RSpec
       end
 
       def null_io_out
-        @null_io_out ||= File.open(File::NULL, "w")
+        @null_io_out ||= File.open(File::NULL, "wb")
       end
     end
   end
